@@ -1,0 +1,257 @@
+{% raw %}
+import os
+import csv
+import io
+import jwt
+import datetime
+
+from flask import Flask, request, jsonify, send_file
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, DateTime, Table, MetaData
+from sqlalchemy.orm import sessionmaker
+from passlib.hash import bcrypt
+from functools import wraps
+
+def create_app():
+    app = Flask(__name__)
+    app.config["SECRET_KEY"] = "SUPER-SECRET"
+
+    # Set up DB engine
+    engine = create_engine("postgresql+psycopg2://YOUR_USERNAME:YOUR_PASSWORD@YOUR_HOST:5433/YOUR_DBNAME", echo=False)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    metadata = MetaData()
+    metadata.bind = engine
+
+    # =====================================
+    # DYNAMIC TABLE: student_records
+    # =====================================
+    # We'll create columns from the config.
+    columns = [
+        Column('id', Integer, primary_key=True, autoincrement=True),
+        {% for col in config.field_list %}
+        Column('{{ col.csv_name }}', {{ col.sqlalchemy_type }}, nullable={{ 'False' if col.required_field else 'True' }}),
+        {% endfor %}
+    ]
+    student_table = Table("student_records", metadata, *columns)
+    student_table.drop(checkfirst=True)
+    student_table.create(checkfirst=True)
+
+    # =====================================
+    # USERS TABLE (built-in)
+    # =====================================
+    users_table = Table("users", metadata,
+        Column("user_id", Integer, primary_key=True, autoincrement=True),
+        Column("username", String, unique=True, nullable=False),
+        Column("name", String, nullable=False),
+        Column("password_hash", String, nullable=False),
+        Column("user_role", String, nullable=False),
+        Column("password_expiration_date", DateTime, nullable=False),
+    )
+    users_table.create(checkfirst=True)
+
+    # Insert a default admin user if none exist
+    existing_users = session.execute(users_table.select()).fetchall()
+    if not existing_users:
+        default_hash = bcrypt.hash("password123")
+        session.execute(users_table.insert().values(
+            username="admin",
+            name="Admin User",
+            password_hash=default_hash,
+            user_role="admin",
+            password_expiration_date=datetime.datetime.now() + datetime.timedelta(days=30)
+        ))
+        session.commit()
+
+    # We'll store the field definitions in Python for the logic
+    field_list = [
+        {% for f in config.field_list %}
+        {
+            "csv_name": "{{ f.csv_name }}",
+            "type": "{{ f.type }}",
+            "required_field": {{ 'True' if f.required_field else 'False' }},
+            "dropdown_values": "{{ f.dropdown_values }}",
+            "include_in_download": {{ 'True' if f.include_in_download else 'False' }}
+        },
+        {% endfor %}
+    ]
+
+    # ========== AUTH DECORATOR ==========
+    def login_required(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            auth_header = request.headers.get('Authorization', None)
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return jsonify({"error": "Missing or invalid Authorization header"}), 401
+            token = auth_header.split(" ")[1]
+            try:
+                decoded = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+                request.user = decoded.get("sub")
+            except jwt.ExpiredSignatureError:
+                return jsonify({"error": "Token expired"}), 401
+            except jwt.InvalidTokenError:
+                return jsonify({"error": "Invalid token"}), 401
+            return f(*args, **kwargs)
+        return decorated_function
+
+    # ========== LOGIN ENDPOINT ==========
+    @app.route("/login", methods=["POST"])
+    def login():
+        data = request.get_json() or {}
+        username = data.get("username")
+        password = data.get("password")
+        if not username or not password:
+            return jsonify({"error": "Missing username/password"}), 400
+
+        user = session.execute(users_table.select().where(users_table.c.username == username)).fetchone()
+        if not user:
+            return jsonify({"error": "Invalid username or password"}), 401
+
+        stored_hash = user[users_table.c.password_hash]
+        if not bcrypt.verify(password, stored_hash):
+            return jsonify({"error": "Invalid username or password"}), 401
+
+        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+        token = jwt.encode(
+            {
+                "sub": username,
+                "exp": expiration
+            },
+            app.config["SECRET_KEY"],
+            algorithm="HS256"
+        )
+        return jsonify({"token": token})
+
+    # ========== UPLOAD ENDPOINT ==========
+    @app.route("/upload", methods=["POST"])
+    @login_required
+    def upload():
+        if "file" not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+
+        file_ = request.files["file"]
+        if file_.filename == "":
+            return jsonify({"error": "Empty filename"}), 400
+
+        stream = io.StringIO(file_.stream.read().decode("utf-8"))
+        csv_reader = csv.DictReader(stream)
+
+        required_cols = [f["csv_name"] for f in field_list if f["required_field"]]
+        for rc in required_cols:
+            if rc not in csv_reader.fieldnames:
+                return jsonify({"error": f"Missing required column '{rc}'"}), 400
+
+        rows_to_insert = []
+        row_index = 0
+        for row_index, row in enumerate(csv_reader, start=1):
+            row_data = {}
+            for fdef in field_list:
+                col_name = fdef["csv_name"]
+                raw_val = row.get(col_name, "").strip()
+
+                if fdef["required_field"] and not raw_val:
+                    return jsonify({"error": f"Row {row_index}: Required field '{col_name}' is empty"}), 400
+
+                if fdef["type"] == "select" and fdef["dropdown_values"]:
+                    allowed = [v.strip() for v in fdef["dropdown_values"].split(",")]
+                    if raw_val not in allowed and raw_val != "":
+                        return jsonify({"error": f"Row {row_index}: '{col_name}' must be one of {allowed}"}), 400
+
+                if fdef["type"] == "int":
+                    if raw_val:
+                        try:
+                            raw_val = int(raw_val)
+                        except ValueError:
+                            return jsonify({"error": f"Row {row_index}: '{col_name}' must be an integer"}), 400
+                    else:
+                        raw_val = None
+                elif fdef["type"] == "float":
+                    if raw_val:
+                        try:
+                            raw_val = float(raw_val)
+                        except ValueError:
+                            return jsonify({"error": f"Row {row_index}: '{col_name}' must be a float"}), 400
+                    else:
+                        raw_val = None
+
+                row_data[col_name] = raw_val
+
+            rows_to_insert.append(row_data)
+
+        conn = engine.connect()
+        try:
+            conn.execute(student_table.insert(), rows_to_insert)
+        finally:
+            conn.close()
+
+        return jsonify({"message": f"Inserted {len(rows_to_insert)} rows"}), 200
+
+    # ========== DOWNLOAD ENDPOINT ==========
+    @app.route("/download", methods=["GET", "POST"])
+    @login_required
+    def download():
+        if request.method == "POST":
+            data = request.get_json() or {}
+            student_ids = data.get("student_ids", [])
+        else:
+            student_ids = request.args.getlist("student_id")
+
+        conn = engine.connect()
+        sel = student_table.select()
+        if student_ids:
+            try:
+                student_ids = [int(s) for s in student_ids]
+            except ValueError:
+                return jsonify({"error": "student_ids must be integers"}), 400
+            sel = sel.where(student_table.c.id.in_(student_ids))
+
+        results = conn.execute(sel).fetchall()
+        conn.close()
+
+        # Only include columns that are marked "include_in_download"
+        download_fields = [f["csv_name"] for f in field_list if f["include_in_download"]]
+        if "id" not in download_fields:
+            download_fields = ["id"] + download_fields
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(download_fields)
+        for r in results:
+            rowout = [r[col] for col in download_fields]
+            writer.writerow(rowout)
+
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode("utf-8")),
+            mimetype="text/csv",
+            as_attachment=True,
+            download_name="student_records.csv"
+        )
+
+    # ========== STUDENT RECORD INFO ENDPOINT ==========
+    # We'll use the API name from config: e.g., /student_record_info
+    @app.route("/{{ config.api_name }}", methods=["GET"])
+    @login_required
+    def student_record_info():
+        sid = request.args.get("student_id")
+        conn = engine.connect()
+        sel = student_table.select()
+        if sid:
+            try:
+                sid_int = int(sid)
+            except ValueError:
+                return jsonify({"error": "student_id must be an integer"}), 400
+            sel = sel.where(student_table.c.id == sid_int)
+
+        rows = conn.execute(sel).fetchall()
+        conn.close()
+
+        return jsonify([dict(r) for r in rows]), 200
+
+    return app
+
+if __name__ == "__main__":
+    app = create_app()
+    app.run(debug=True, port=5000, host="0.0.0.0")
+{% endraw %}
+

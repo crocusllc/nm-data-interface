@@ -1,10 +1,10 @@
 --- #database
 database:
-  name: my_database
-  user: db_user
-  password: db_password
+  name: ptt_db
+  user: postgres
+  password: postgres
   host: localhost
-  port: 5432
+  port: 5433
 
 --- #app theming
 theme:
@@ -25,9 +25,10 @@ categories:
   'Student IHE Enrollment Information':
     editable: false
 
+#text, select, numeric, date #tipo de campo
 --- # fields
 fields:
-   form:
+  - form:
       Name: Student Records
       API_Name: "student_record_info"
       field-1:
@@ -871,4 +872,21 @@ fields:
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file:  'Admin Only'
+  - form:
+        name: Another Form
+        field-1:
+          Category: "Additional Program Information" #esta es la seccion
+          Order-within-category: 1 #orden
+          Data-element-label: "Licensure Program Requirements Met on Entry" #etiqueta a pintar
+          CSV-column-name: "licensure_program_requirements_met_on_entry" #nombre en la ddbb y en el csv
+          Type: select
+          Validation-required: false
+          Dropdown-or-validation-values: "Yes,No"
+          Support-multi-select: false
+          Required-field: false
+          Include-in-bulk-upload: true
+          Display-on-Student-Record-page: true
+          Use-as-filter-in-View/Edit-search-page: false
+          Use-as-filter-on-Download-page: false
+          Include-in-download-file: true
 

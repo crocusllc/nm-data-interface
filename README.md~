@@ -114,7 +114,7 @@ by rebuilding the Docker image to apply the updates.
 3. run `generate_app.py` to generate the API.
 
 ```
-python read_config.py --config config.yaml --template app_template.jinja2 --output ptt_api.py
+python generate_app.py --config config.yaml --template app_template.jinja2 --output ptt_api.py
 ```
 
 4. Build and Run the Docker Container:

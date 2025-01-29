@@ -74,10 +74,7 @@ def parse_config_for_db(config_path):
     return field_list
 
 def create_sql_files(fields):
-    """We need to create two tables, student info and clinical placements with
-    fields read from the config.yaml file"""
-    pass   
-       
+
 
 def main():
     parser = argparse.ArgumentParser(
