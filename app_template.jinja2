@@ -11,6 +11,11 @@ from sqlalchemy.orm import sessionmaker
 from passlib.hash import bcrypt
 from functools import wraps
 
+def get_database_config(config_path="config.yaml"):
+    """Load database configuration from a YAML file."""
+    with open(config_path, "r") as file:
+        config = yaml.safe_load(file)
+    return config["database"]
 
 def setup_db_connection():
     """Set up database connection using credentials from config.yaml."""
@@ -34,8 +39,6 @@ def setup_db_connection():
     if users_table is None:
         raise ValueError("Users table not found in the database schema.")
     
-    return engine, session, metadata, users_table
-
     return engine, session, metadata, users_table
 
 def create_app():
