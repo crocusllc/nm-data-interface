@@ -14,7 +14,9 @@ from functools import wraps
 def get_database_config(config_path="config.yaml"):
     """Load database configuration from a YAML file."""
     with open(config_path, "r") as file:
-        config = yaml.safe_load(file)
+        docs = yaml.safe_load_all(file)
+    for doc in docs:
+        if doc.get('database'):
     return config["database"]
 
 def setup_db_connection():

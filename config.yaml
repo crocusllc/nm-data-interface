@@ -1,8 +1,8 @@
 --- #database
 database:
-  name: my_database
-  user: db_user
-  password: db_password
+  name: ptt_db
+  user: postgres
+  password: postgres
   host: localhost
   port: 5432
 
