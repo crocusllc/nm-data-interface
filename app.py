@@ -11,11 +11,19 @@ from sqlalchemy.orm import sessionmaker
 from passlib.hash import bcrypt
 from functools import wraps
 
+def get_database_config(config_path="config.yaml"):
+    """Load database configuration from a YAML file."""
+    with open(config_path, "r") as file:
+        docs = yaml.safe_load_all(file)
+    for doc in docs:
+        if doc.get('database'):
+            config = doc['database']
+    return config
 
 def setup_db_connection():
     """Set up database connection using credentials from config.yaml."""
     db_config = get_database_config()
-    
+    print(db_config)
     # Create database connection string
     db_url = (f"postgresql+psycopg2://{db_config['user']}:{db_config['password']}"
               f"@{db_config['host']}:{db_config['port']}/{db_config['name']}")
@@ -36,14 +44,12 @@ def setup_db_connection():
     
     return engine, session, metadata, users_table
 
-    return engine, session, metadata, users_table
-
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "SUPER-SECRET"
 
     # Set up DB engine
-    engine = create_engine("postgresql+psycopg2://postgres:postgres@YOUR_HOST:5433/ptt_db", echo=False)
+    engine = create_engine("postgresql+psycopg2://postgres:postgres@localhost:5433/ptt_db", echo=False)
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -99,7 +105,7 @@ def create_app():
         password = data.get("password")
         if not username or not password:
             return jsonify({"error": "Missing username/password"}), 400
-        user = session.execute(users_table.select().where(users_table.c.username == username)).fetchone()
+        user = session.execute(text(select password from ))).fetchone()
         if not user:
             return jsonify({"error": "Invalid username or password"}), 401
 
