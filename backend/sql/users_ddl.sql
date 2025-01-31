@@ -7,7 +7,21 @@ CREATE TABLE users (
     user_role VARCHAR(20) CHECK (user_role IN ('administrator', 'editor', 'viewer')) NOT NULL
 );
 
+INSERT INTO users (
+   user_id,
+    username,
+    password_hash,
+    user_email,
+    password_expiration_date ,
+    user_role 
 ) VALUES (
+   1,
+   'admin',
+    '$2a$10$HJn5BCRhYWBDi6NCqznwdOtm24BllSJNPPkks378JtX800WkWV142',
+    'admin@example.com',
+    '2099-12-31',
+    'administrator'
+);
 
 
 --ALTER TABLE students ENABLE ROW LEVEL SECURITY;
