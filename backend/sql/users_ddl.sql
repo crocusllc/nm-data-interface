@@ -7,6 +7,9 @@ CREATE TABLE users (
     user_role VARCHAR(20) CHECK (user_role IN ('administrator', 'editor', 'viewer')) NOT NULL
 );
 
+) VALUES (
+
+
 --ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 --ALTER TABLE clinical_placements ENABLE ROW LEVEL SECURITY;
 
