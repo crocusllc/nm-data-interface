@@ -1,4 +1,24 @@
+networks:
+  web:
+    external: true
+  internal:
+    external: false
+    driver: bridge
+
 services:
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/data:/data # Optional
+      - ./caddy/config:/config # Optional
+    networks:
+      - web
+      - internal
   api:
     build:
       context: .
@@ -17,6 +37,8 @@ services:
     ports:
       - 5432:5432
       - 3030:5000
+    networks:
+      - internal
   app:
     build: 
       context: ./
@@ -26,4 +48,6 @@ services:
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./frontend/.env:/app/.env
+    networks:
+      - internal
 

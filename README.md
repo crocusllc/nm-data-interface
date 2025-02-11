@@ -109,25 +109,50 @@ this file allows you to update routes, data models, and other settings without
 changing the core codebase. Ensure that any changes to config.yaml are followed 
 by rebuilding the Docker image to apply the updates.
 
-1. check that the credentials in the config.yaml file are the same as those in the Docker file
+1. Prepare the docker-compose.yml file with the ports and database configs
 2. Edit the fields you want to show in the student information form
-3. run `generate_app.py` to generate the API.
+3. Create the networks
 
 ```
-python read_config.py --config config.yaml --template app_template.jinja2 --output ptt_api.py
+    docker network create web
+    docker network create --internal caddy_internal
 ```
 
-4. Build and Run the Docker Container:
+4. Create the networks
+
 ```
-    docker-compose up --build
+    docker-compose up -d
 ```
+
     This command will build the Docker image and start the application along with the PostgreSQL database.
 
     Access the Application:
 
-    Open your browser and navigate to http://localhost:3000 to access the frontend.
+    Open your browser and navigate to https://localhost to access the frontend.
 
+## Update the app.py
 
+To update the app.py execute:
+
+```
+    docker compose exec api python3 /tmp/read_config.py --mode app --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
+```
+
+## Update sql scripts
+
+Execute:
+
+```
+    docker compose exec api python3 /tmp/read_config.py --mode db --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
+```
+
+## Create csv templates
+
+Execute:
+
+```
+    docker compose exec api python3 /tmp/read_config.py --mode csv --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
+```
 
 ## Usage
 
