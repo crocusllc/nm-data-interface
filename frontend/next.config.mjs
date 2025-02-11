@@ -11,6 +11,9 @@ const nextConfig = {
   env: {
     CONFIG_DATA: fileContents, // Pass the config object as a JSON string
   },
+  server: {
+    https: true
+  }
 };
 
 export default nextConfig;
