@@ -27,11 +27,12 @@
 }
 
 localhost:443 {
-    import cors localhost:443 
-    reverse_proxy app:3000
+    import cors localhost:443
     tls internal
 
-    handle_path /api/* {
+    handle_path /db/* {
         reverse_proxy api:5000
     }
+
+    reverse_proxy app:3000
 }

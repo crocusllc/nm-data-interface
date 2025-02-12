@@ -1,6 +1,6 @@
 #Copy this file and rename to .env in the same directory
 AUTH_SECRET=Uff3rC3SOda9pgr+vVzv+mo4xPNrTD2QhEEdvMP46Jdd
-API_URL=http://api:5000
-NEXT_PUBLIC_API_URL=http://api:5000
-AUTH_TRUST_HOST=http://localhost:3000
-NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=https://localhost/db
+API_URL=https://localhost/db
+AUTH_TRUST_HOST=https://localhost
+NEXTAUTH_URL=https://localhost
