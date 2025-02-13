@@ -291,14 +291,11 @@ def create_app():
         cur.close()
         conn.close()
 
-        if len(results) > 1:
+        if len(results) >= 1:
             output = io.StringIO()
             writer = csv.writer(output)
 
-            if fields == ["*"]:
-                writer.writerow(results[0].keys())
-            else:
-                writer.writerow(fields)
+            writer.writerow(results[0].keys())            
 
             for row in results:
                 if fields == ["*"]:
