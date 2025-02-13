@@ -26,9 +26,8 @@
     }
 }
 
-localhost:443 {
+mydomain.example {
     import cors localhost:443
-    tls internal
 
     handle_path /db/* {
         reverse_proxy api:5000
