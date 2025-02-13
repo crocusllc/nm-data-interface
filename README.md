@@ -13,6 +13,7 @@ configuration file, the application ensures consistency across various component
 - Configuration
 - Usage
 - Contributing
+- Enabling HTTPS
 - License
 
 ## Overview
@@ -104,10 +105,7 @@ cd ptt
 
 ## Configuration
 
-The config.yaml file defines the application's behavior and structure. Modifying 
-this file allows you to update routes, data models, and other settings without 
-changing the core codebase. Ensure that any changes to config.yaml are followed 
-by rebuilding the Docker image to apply the updates.
+The config.yaml file defines the application's behavior and structure. Modifying this file allows you to update routes, data models, and other settings without changing the core codebase. Ensure that any changes to config.yaml are followed by rebuilding the Docker image to apply the updates.
 
 1. Prepare the docker-compose.yml file with the ports and database configs
 2. Edit the fields you want to show in the student information form
@@ -130,7 +128,7 @@ by rebuilding the Docker image to apply the updates.
 
     Open your browser and navigate to https://localhost to access the frontend.
 
-## Update the app.py
+### Update the app.py
 
 To update the app.py execute:
 
@@ -138,7 +136,7 @@ To update the app.py execute:
     docker compose exec api python3 /tmp/read_config.py --mode app --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
 ```
 
-## Update sql scripts
+### Update sql scripts
 
 Execute:
 
@@ -146,7 +144,7 @@ Execute:
     docker compose exec api python3 /tmp/read_config.py --mode db --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
 ```
 
-## Create csv templates
+### Create csv templates
 
 Execute:
 
@@ -163,6 +161,24 @@ Execute:
    - Edit Data: Click on a record from the search results to edit its details.
    - Data Export: Use the export option to download data records.
    - Admin Page: Admins can manage users at http://localhost:3000/admin.
+
+## Enabling HTTPS
+
+Caddy is used to enable https in the local environment. It also facilitates deployment to production.
+
+To deploy the aplication to a custom domain.
+
+1. Change the example email to an email address for your ACME account
+2. Change `localhost:443` to your custom domain.
+3. Delete the following block
+
+```
+    tls internal {
+        on_demand
+    }
+```
+
+Caddy automatically handles HTTPS because you've provided a domain name.
 
 ## Contributing
 
