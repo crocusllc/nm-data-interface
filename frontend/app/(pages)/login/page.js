@@ -32,14 +32,14 @@ export default function LoginPage() {
       setUsernameErrorMessage('')
     }
 
-    if (passInput.current.value.length < 4) {
-      setPasswordError(true);
-      setPasswordErrorMessage('Password must be at least 4 characters long.');
-      isValid = false;
-    } else {
-      setPasswordError(false);
-      setPasswordErrorMessage('');
-    }
+    // if (passInput.current.value.length < 4) {
+    //   setPasswordError(true);
+    //   setPasswordErrorMessage('Password must be at least 4 characters long.');
+    //   isValid = false;
+    // } else {
+    //   setPasswordError(false);
+    //   setPasswordErrorMessage('');
+    // }
     return isValid;
   };
   const handleSubmit =  async (e) => {
