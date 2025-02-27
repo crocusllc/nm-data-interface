@@ -1,6 +1,6 @@
 "use client"
 import Box from '@mui/material/Box';
-import {FormControl, FormLabel, IconButton, TextField, Typography} from "@mui/material";
+import {FormControl, FormHelperText, FormLabel, IconButton, TextField, Typography} from "@mui/material";
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
@@ -12,6 +12,11 @@ import DialogContentText from "@mui/material/DialogContentText";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from '@mui/material/DialogActions';
 import {signIn} from "next-auth/react";
+import {passValidation} from "@/app/utils/globalFunctions";
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import InputAdornment from '@mui/material/InputAdornment';
+import OutlinedInput from '@mui/material/OutlinedInput';
 
 export default function ChangePassPage() {
   const [error, setError] = useState(false)
@@ -29,6 +34,14 @@ export default function ChangePassPage() {
   const newPass = useRef(null);
   const confirmPass = useRef(null);
 
+  const [showPassword, setShowPassword] = React.useState(false);
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
+  const handleMouseUpPassword = (event) => {
+    event.preventDefault();
+  };
 
   const validateInputs = () => {
     const password = newPass.current.value;
@@ -36,9 +49,14 @@ export default function ChangePassPage() {
 
     let isValid = true;
 
-    if (!password || password.length < 4) {
+    // This function return an array of error validations.
+    const passwordValidation = passValidation(password);
+
+    console.log(passwordValidation);
+    // If array length, there are errors.
+    if (passwordValidation.length) {
       setPasswordError(true);
-      setPasswordErrorMessage('Password must be at least 4 characters long.');
+      setPasswordErrorMessage(passwordValidation);
       isValid = false;
     } else {
       setPasswordError(false);
@@ -90,20 +108,43 @@ export default function ChangePassPage() {
           >
             <FormControl>
               <FormLabel htmlFor="new_password">New Password</FormLabel>
-              <TextField
+              <OutlinedInput
                 required
                 fullWidth
                 name="new_password"
                 placeholder="••••••"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 id="new_password"
                 autoComplete="password"
                 variant="outlined"
                 error={passwordError}
-                helperText={passwordErrorMessage}
                 color={passwordError ? 'error' : 'primary'}
                 inputRef={newPass}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={
+                        showPassword ? 'hide the password' : 'display the password'
+                      }
+                      onClick={handleClickShowPassword}
+                      onMouseDown={handleMouseDownPassword}
+                      onMouseUp={handleMouseUpPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
               />
+              { passwordError && (
+                <FormHelperText component={"div"} error>
+                  <ul>
+                    {passwordErrorMessage?.map((msg, i) => (
+                      <li key={i}>{msg}</li>
+                    ))}
+                  </ul>
+                </FormHelperText>
+              )}
             </FormControl>
             <FormControl>
               <FormLabel htmlFor="confirm_password">Confirm Password</FormLabel>
@@ -171,7 +212,8 @@ export default function ChangePassPage() {
                 });
 
                 if(response?.error) {
-                  setFetchResponse('Error refreshing session')
+                  setFetchResponse('Error refreshing session');
+                  setError(true);
                 } else  {
                   // redirect and router.push do not work in prod mode.
                   window.location.href = "/";
@@ -182,6 +224,5 @@ export default function ChangePassPage() {
         }
       </Dialog>
     </Box>
-
   );
 }

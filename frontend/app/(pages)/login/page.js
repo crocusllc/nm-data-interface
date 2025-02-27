@@ -1,5 +1,4 @@
 "use client"
-
 import Box from '@mui/material/Box';
 import {FormControl, FormLabel, TextField, Typography} from "@mui/material";
 import Card from '@mui/material/Card';
@@ -11,43 +10,16 @@ import {signIn} from "next-auth/react";
 
 export default function LoginPage() {
   const [passwordError, setPasswordError] = useState(false);
-  const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
   const [usernameError, setUsernameError] = useState(false);
-  const [usernameErrorMessage, setUsernameErrorMessage] = useState('')
   const [loginError, setLoginError] = useState('')
 
   const usernameInput = useRef(null);
   const passInput = useRef(null);
 
-  const validateInputs = () => {
-    setLoginError('');
-    let isValid = true;
-
-    if(usernameInput.current.value.length < 4) {
-      setUsernameError(true);
-      setUsernameErrorMessage('Username must be at least 4 characters long');
-      isValid = false;
-    } else {
-      setUsernameError(false);
-      setUsernameErrorMessage('')
-    }
-
-    if (passInput.current.value.length < 4) {
-      setPasswordError(true);
-      setPasswordErrorMessage('Password must be at least 4 characters long.');
-      isValid = false;
-    } else {
-      setPasswordError(false);
-      setPasswordErrorMessage('');
-    }
-    return isValid;
-  };
   const handleSubmit =  async (e) => {
+    setPasswordError(false);
+    setUsernameError(false);
     e.preventDefault();
-    if (usernameError || passwordError) {
-      return;
-    }
-
     const response = await signIn("credentials", {
       redirect: false,
       username: usernameInput.current.value,
@@ -56,6 +28,8 @@ export default function LoginPage() {
 
     if(response?.error) {
       setLoginError('Username or password incorrect')
+      setPasswordError(true);
+      setUsernameError(true);
     } else  {
       // redirect and router.push do not work in prod mode.
       window.location.href = "/";
@@ -85,7 +59,6 @@ export default function LoginPage() {
                 autoComplete="username"
                 variant="outlined"
                 error={usernameError}
-                helperText={usernameErrorMessage}
                 color={usernameError ? 'error' : 'primary'}
                 inputRef={usernameInput}
               />
@@ -102,7 +75,6 @@ export default function LoginPage() {
                 autoComplete="new-password"
                 variant="outlined"
                 error={passwordError}
-                helperText={passwordErrorMessage}
                 color={passwordError ? 'error' : 'primary'}
                 inputRef={passInput}
               />
@@ -114,7 +86,6 @@ export default function LoginPage() {
                 type="submit"
                 fullWidth
                 variant="contained"
-                onClick={validateInputs}
               >
                 Sign in
               </Button>
