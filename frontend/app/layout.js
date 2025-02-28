@@ -7,10 +7,11 @@ import Header from "@/app/components/Header/Header";
 import MainMenu from "@/app/components/MainMenu/MainMenu";
 import Box from "@mui/material/Box";
 import {usePathname} from 'next/navigation'
-import {useState} from "react";
 import {Container} from "@mui/material";
 import {SessionProvider} from "next-auth/react";
 import {AuthProvider} from "@/app/utils/contexts/AuthProvider";
+import { PrimeReactProvider } from 'primereact/api';
+import "primereact/resources/themes/lara-light-cyan/theme.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en">
+    <PrimeReactProvider>
       <AppRouterCacheProvider>
         <SessionProvider>
           <AuthProvider>
@@ -55,6 +57,7 @@ export default function RootLayout({ children }) {
           </AuthProvider>
         </SessionProvider>
       </AppRouterCacheProvider>
+    </PrimeReactProvider>
     </html>
   );
 }
