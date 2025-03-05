@@ -8,27 +8,24 @@ import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
-import {CloseIcon} from "next/dist/client/components/react-dev-overlay/internal/icons/CloseIcon";
+import CloseIcon from '@mui/icons-material/Close';
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 
+import "primereact/resources/themes/lara-light-cyan/theme.css";
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
 
 const getFullRecordLink = (rowData) => {
-  return <a href={`/student-records/${rowData.student_id}`} title="View student full record">View Full Record</a>;
+  return <Box component={"a"} sx={{color: "primary.dark"}} href={`/student-records/${rowData.student_id}`} title="View student full record">View Full Record</Box>;
 };
+
 export default function StudentRecordsPage() {
   // Getting user session data.
   const [studentRecords, setStudentRecords] = useState();
   const [selectedRows, setSelectedRows] = useState([]);
   const [open, setOpen] = useState(false);
   const [uploadResponse, setUploadResponse] = useState()
-
-  const handleRowSelection = (rowSelectionModel) => {
-    setSelectedRows(rowSelectionModel); // rowSelectionModel contains IDs of selected rows
-  };
 
   let gridFields = [];
   let orderedGridColumn = []
@@ -67,14 +64,12 @@ export default function StudentRecordsPage() {
     ?.find( el => el?.form?.Name === "Student Records")?.form;
   const studentRecordKeys = Object.keys(studentRecordFormFields);
 
-
   // Using the key to filter field displayed in the student record page.
   studentRecordKeys.forEach( el => {
-    if(studentRecordFormFields[el]['Display on Student Record page?'] === true){
+    if(studentRecordFormFields[el]['Use as filter in View/Edit search page?'] === true){
       gridFields.push(studentRecordFormFields[el])
     }
   });
-
 
   // Categories defined in config.yaml file.
   const categories = getConfigData()?.categories;
@@ -92,7 +87,7 @@ export default function StudentRecordsPage() {
     ...orderedGridColumn.map( field => ({
       field: field['CSV column name'],
       header: field['Data element label'],
-      filterEnabled: field['Use as filter in View/Edit search page?'],
+      filterEnabled: true,
       renderCell: null,
       sortable: true
     })),
@@ -103,9 +98,6 @@ export default function StudentRecordsPage() {
       renderCell: getFullRecordLink,
     }
   ]
-
-  const paginatorLeft = <Button type="button" icon="pi pi-refresh" text />;
-  const paginatorRight = <Button type="button" icon="pi pi-download" text />;
 
   const deleteStudentRecord = async () => {
     const studentIds = selectedRows.map( student => student.student_id)
@@ -146,12 +138,12 @@ export default function StudentRecordsPage() {
           <>
             {
               userSession.user.role !== 'viewer' && (
-                <Box sx={{textAlign: "right"}}>
+                <Box sx={{textAlign: "right", marginBottom: "10px"}}>
                   <IconButton
                     aria-label="delete records"
                     title={"Delete records"}
                     size="large"
-                    color="primary"
+                    sx={{color:"secondary.dark", "&:hover": {backgroundColor:"secondary.dark", color: "#fff"}}}
                     disabled={!selectedRows.length > 0}
                     onClick={deleteStudentRecord}
                   >
@@ -160,19 +152,17 @@ export default function StudentRecordsPage() {
                 </Box>
               )
             }
-            <Box sx={{ height: (numberRows * 58), width: '100%' }}>
+            <Box>
               <DataTable
                 value={studentRecords}
                 showGridlines
-                tableStyle={{ minWidth: '50rem' }}
                 paginator
                 rows={20}
-                // rowsPerPageOptions={[5, 10, 25, 50]}
-                // paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+                rowsPerPageOptions={[5, 10, 20, 50]}
                 currentPageReportTemplate="{first} to {last} of {totalRecords}"
-                paginatorLeft={paginatorLeft} paginatorRight={paginatorRight}
                 removableSort
-                selection={selectedRows} onSelectionChange={(e) => setSelectedRows(e.value)}
+                selection={selectedRows}
+                onSelectionChange={(e) => setSelectedRows(e.value)}
                 selectionMode={'checkbox'}
               >
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>

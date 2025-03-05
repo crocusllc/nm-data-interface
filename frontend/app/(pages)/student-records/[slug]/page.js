@@ -2,14 +2,10 @@
 
 import Box from '@mui/material/Box';
 import { useParams } from "next/navigation";
-import { student_record_info } from "@/app/utils/dummyData"
 import {useEffect, useState} from "react";
 import CategoryManager from "@/app/(pages)/student-records/[slug]/CategoryManager";
 import Stack from '@mui/material/Stack';
 import getConfigData from "@/app/utils/getConfigs"
-import {IconButton} from "@mui/material";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import FormBuilder from "@/app/(pages)/student-records/[slug]/FormBuilder";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 
 export default function StudentRecordPage() {
@@ -63,7 +59,7 @@ export default function StudentRecordPage() {
   let formCategories = {}
   // Grouping fields by category.
   fieldKeys.forEach( el => {
-    if(filteredFormData[el]?.Category && filteredFormData[el]?.Category !== "Global") {
+    if(filteredFormData[el]?.Category && filteredFormData[el]?.Category !== "global") {
       if(formCategories[filteredFormData[el].Category]) {
         formCategories[filteredFormData[el].Category].push(filteredFormData[el])
       } else {
@@ -77,17 +73,13 @@ export default function StudentRecordPage() {
     }
   })
 
-  const handleSubmit = (data) => {
-    alert("Submitted data: " + JSON.stringify(data));
-  };
-
   return (
     <>
       <h1>Student ID #: {slug}</h1>
       <Stack spacing={2} sx={{maxWidth: "768px"}}>
         {
           studentRecordData &&
-            Object.keys(categories).map( catKey => {
+            Object.keys(categories).filter(cat => cat !== "global").map( catKey => {
               return (
                 <Stack spacing={2} key={catKey} sx={{padding: "16px", border: "1px solid #ccc", borderRadius: "4px",  position: "relative"}}>
                   <Box component={"h2"} sx={{marginBottom: "10px"}}>

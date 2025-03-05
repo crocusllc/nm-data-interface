@@ -12,7 +12,12 @@ const HomeMenuItem = ({ href, label, ariaLabel, show }) => {
   if (!show) return null;
 
   return (
-    <Box sx={{ width: "320px" }}>
+    <Box sx={{
+      width: "320px",
+      backgroundColor: "primary.dark",
+      "&:hover a": {color: "#fff"},
+      "& a": { color: "primary.light", textDecoration: "none"}
+      }}>
       <Link href={href} aria-label={ariaLabel}>
         <Stack spacing={2} direction="row" sx={{ alignItems: 'center', justifyContent: "space-between", boxShadow: 2, padding: "14px" }}>
           <Typography noWrap>{label}</Typography>

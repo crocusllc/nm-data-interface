@@ -24,17 +24,20 @@ export default function MainMenu() {
     <Box
       sx={{
         width: "60px",
-        backgroundColor: "#f4f4f4",
+        backgroundColor: "primary.light",
       }}
     >
       {
-        <Stack component={"nav"} alignItems="center">
+        <Stack component={"nav"} alignItems="center" sx={{
+          '& a': { color: "primary.dark", padding: "18px"},
+          '& a:hover': { backgroundColor: "primary.main"},
+          '& a.active': { backgroundColor: "primary.dark", color: "#fff"}
+        }}>
           {menuItems.filter(item => !item.protected || allowed).map(({ href, icon, label }) => (
             <Link
               key={href}
               href={href}
               className={`link ${pathname === href ? "active" : ""}`}
-              style={{ padding: "18px", borderRadius: "50%" }}
               aria-label={label}
             >
               {icon}

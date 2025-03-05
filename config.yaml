@@ -2,11 +2,22 @@
 theme:
   logo: "/ptt_logo.png"
   colors:
-    primary: FFF
-    secondary: 000
+    primary:
+      main: "#5E9DE8"
+      light: "#ADCDF3"
+      dark: "#0F6DDC"
+      contrastText: "#ffffff"
+    secondary:
+      main: "#FF9097"
+      light: "#FFC7CA"
+      dark: "#FF5A64"
+      contrastText: "#ffffff"
 
 --- # Categories
 categories:
+  global:
+    label: "Global"
+    editable: false
   student_info:
     label: "Student IHE Enrollment Information"
     editable: false
@@ -52,7 +63,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -67,7 +78,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
         Include in download file: true
@@ -82,7 +93,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -97,7 +108,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -127,7 +138,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -142,7 +153,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -158,8 +169,8 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
-        Use as filter in View/Edit search page?: false
+        Display on Student Record page?: true
+        Use as filter in View/Edit search page?: true
         Use as filter on Download page?: true
         Include in download file: true
       field-10:
@@ -173,7 +184,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
         Include in download file: true
@@ -188,7 +199,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
         Include in download file: true
@@ -203,7 +214,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
         Include in download file: true
@@ -218,7 +229,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -233,7 +244,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -248,7 +259,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -263,7 +274,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -278,7 +289,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
         Include in download file: true
@@ -293,7 +304,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
         Include in download file: true
@@ -308,7 +319,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -323,7 +334,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -338,7 +349,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -353,7 +364,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -368,7 +379,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -383,7 +394,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -398,12 +409,12 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
       field-26:
-        Category: Global
+        Category: global
         Order within category: 1
         Data element label: 'Student Id'
         CSV column name: student_id
@@ -443,7 +454,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -518,7 +529,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -533,7 +544,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -548,7 +559,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
         Include in download file: true
@@ -563,7 +574,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
         Include in download file: true
@@ -593,7 +604,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -623,7 +634,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -668,7 +679,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -683,7 +694,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -698,7 +709,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true
@@ -728,7 +739,7 @@ fields:
         multi-select: false
         Required field: false
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: false
         Include in download file: true

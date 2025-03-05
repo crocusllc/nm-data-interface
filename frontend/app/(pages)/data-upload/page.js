@@ -58,9 +58,9 @@ export default function UploadForms() {
               templatePaths.map((template, i)=> {
                 return (
                   <ListItem key={i} disablePadding>
-                    <ListItemButton component="a" href={template.path} download>
-                      <ListItemAvatar>
-                        <Avatar sx={{ width: 32, height: 32 }}>
+                    <ListItemButton component="a" href={template.path} download >
+                      <ListItemAvatar >
+                        <Avatar sx={{ width: 32, height: 32 }} sx={{backgroundColor: "secondary.dark"}}>
                           <SaveAltRoundedIcon fontSize={"small"}/>
                         </Avatar>
                       </ListItemAvatar>
@@ -84,7 +84,9 @@ export default function UploadForms() {
           )
         })
       }
-      <Link href={"/upload-log"} aria-label={"Upload Log"}>View Upload Log</Link>
+      <Box sx={{"& a": {color: "secondary.dark", marginTop: "10px"}}}>
+        <Link href={"/upload-log"} aria-label={"Upload Log"}>View Upload Log</Link>
+      </Box>
     </Stack>
   );
 }
