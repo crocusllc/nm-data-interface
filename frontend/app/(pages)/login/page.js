@@ -79,7 +79,7 @@ export default function LoginPage() {
                 inputRef={passInput}
               />
             </FormControl>
-            <Box sx={{display: "flex", justifyContent: "space-between"}}>
+            <Box sx={{display: "flex", justifyContent: "space-between", "& a": {color: "primary.dark"}}}>
               <Link href="/forgot-password">Forgot password?</Link>
               <Button
                 sx={{maxWidth: "200px"}}
