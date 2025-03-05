@@ -2,8 +2,16 @@
 theme:
   logo: "/ptt_logo.png"
   colors:
-    primary: FFF
-    secondary: 000
+    primary:
+      main: "#5E9DE8"
+      light: "#ADCDF3"
+      dark: "#0F6DDC"
+      contrastText: "#ffffff"
+    secondary:
+      main: "#FF9097"
+      light: "#FFC7CA"
+      dark: "#FF5A64"
+      contrastText: "#ffffff"
 
 --- # Categories
 categories:
