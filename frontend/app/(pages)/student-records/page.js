@@ -17,7 +17,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 
 const getFullRecordLink = (rowData) => {
-  return <Box compontent={"a"} sx={{color: "primary.dark"}} href={`/student-records/${rowData.student_id}`} title="View student full record">View Full Record</Box>;
+  return <Box component={"a"} sx={{color: "primary.dark"}} href={`/student-records/${rowData.student_id}`} title="View student full record">View Full Record</Box>;
 };
 
 export default function StudentRecordsPage() {

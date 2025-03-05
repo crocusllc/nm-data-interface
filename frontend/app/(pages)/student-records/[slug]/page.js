@@ -2,14 +2,10 @@
 
 import Box from '@mui/material/Box';
 import { useParams } from "next/navigation";
-import { student_record_info } from "@/app/utils/dummyData"
 import {useEffect, useState} from "react";
 import CategoryManager from "@/app/(pages)/student-records/[slug]/CategoryManager";
 import Stack from '@mui/material/Stack';
 import getConfigData from "@/app/utils/getConfigs"
-import {IconButton} from "@mui/material";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import FormBuilder from "@/app/(pages)/student-records/[slug]/FormBuilder";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 
 export default function StudentRecordPage() {
