@@ -166,7 +166,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
         Include in download file: true
@@ -181,7 +181,7 @@ fields:
         multi-select: false
         Required field: true
         Include in bulk upload?: true
-        Display on Student Record page?: false
+        Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
         Include in download file: true
