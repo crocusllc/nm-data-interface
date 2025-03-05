@@ -64,14 +64,12 @@ export default function StudentRecordsPage() {
     ?.find( el => el?.form?.Name === "Student Records")?.form;
   const studentRecordKeys = Object.keys(studentRecordFormFields);
 
-
   // Using the key to filter field displayed in the student record page.
   studentRecordKeys.forEach( el => {
-    if(studentRecordFormFields[el]['Display on Student Record page?'] === true){
+    if(studentRecordFormFields[el]['Use as filter in View/Edit search page?'] === true){
       gridFields.push(studentRecordFormFields[el])
     }
   });
-
 
   // Categories defined in config.yaml file.
   const categories = getConfigData()?.categories;
@@ -89,7 +87,7 @@ export default function StudentRecordsPage() {
     ...orderedGridColumn.map( field => ({
       field: field['CSV column name'],
       header: field['Data element label'],
-      filterEnabled: field['Use as filter in View/Edit search page?'],
+      filterEnabled: true,
       renderCell: null,
       sortable: true
     })),
