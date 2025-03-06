@@ -343,7 +343,7 @@ def create_app():
     # ========== DELETE STUDENT ENDPOINT ==========
     @app.route("/delete_student", methods=["POST"])
     @login_required(role_required=["administrator", "editor"])
-    def delete_record():
+    def delete_student():
         data = request.get_json() or {}
 
         if (data != {}):
