@@ -14,13 +14,14 @@ const HomeMenuItem = ({ href, label, ariaLabel, show }) => {
   return (
     <Box sx={{
       width: "320px",
-      backgroundColor: "primary.dark",
-      "&:hover a": {color: "#fff"},
-      "& a": { color: "primary.light", textDecoration: "none"}
+      backgroundColor: "primary.light",
+      "&:hover": { backgroundColor: "primary.main"},
+      "&:hover a": { color: "#fff"},
+      "& a": { color: "primary.dark", textDecoration: "none", fontWeight: "bold"}
       }}>
       <Link href={href} aria-label={ariaLabel}>
         <Stack spacing={2} direction="row" sx={{ alignItems: 'center', justifyContent: "space-between", boxShadow: 2, padding: "14px" }}>
-          <Typography noWrap>{label}</Typography>
+          {label}
           <ArrowForwardIosRoundedIcon />
         </Stack>
       </Link>
