@@ -115,6 +115,29 @@ def create_app():
 
         return jsonify({"token": token, "username": user['username'], "role": user['user_role'], "new_password": user['new_password']})
 
+
+    # ========== DELETE USER ENDPOINT ==========
+    @app.route("/delete_user", methods=["POST"])
+    @login_required(role_required=["administrator"])
+    def delete_user():
+        data = request.get_json() or {}
+
+        if (data != {}):
+            id = data.get("id")
+            
+            conn = create_conn()
+            cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+
+            if id is not None:
+                query = f'DELETE FROM users WHERE id = {id};'
+                
+                cur.execute(query)
+                conn.commit()
+
+                return jsonify({"message": f"The record was deleted successfully."})
+            else:
+                return jsonify({"error": f"Data missing."})
+    
     # ========== CREATE USER ENDPOINT ==========
     @app.route("/create_user", methods=["POST"])
     def create_user():
@@ -138,15 +161,16 @@ def create_app():
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        query = f"INSERT INTO users (username, password_hash, user_email, password_expiration_date, user_role) VALUES ('{username}','{hash}','{useremail}','{expiration_date}','{userrole}');"
+        query = f"INSERT INTO users (username, password_hash, user_email, password_expiration_date, user_role) VALUES ('{username}','{hash}','{useremail}','{expiration_date}','{userrole}') RETURNING user_id;"
         cur.execute(query)
+        returned_id = cur.fetchone()[0]
         
         conn.commit()
 
         cur.close()
         conn.close()
 
-        return jsonify({"message": "The user was created successfully!"})
+        return jsonify({"message": "The user was created successfully with ID {returned_id}!"})
 
     # ========== CHANGE PASSWORD ENDPOINT ==========
     @app.route("/change_password", methods=["POST"])
@@ -313,10 +337,37 @@ def create_app():
 
         return jsonify({"message": "No data available"})
 
+    # ========== DELETE DATA ENDPOINT ==========
+    @app.route("/delete_data", methods=["POST"])
+    @login_required(role_required=["administrator", "editor"])
+    def delete_record():
+        data = request.get_json() or {}
+
+        if (data != {}):
+            if 'table_name' in data and 'id' in data:
+                id = data.get("id")
+                table = data.get("table_name")
+
+                conn = create_conn()
+                cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+                    
+                query = f"DELETE FROM {table} WHERE id={id};"
+                cur.execute(query)
+                conn.commit()
+
+                cur.close()
+                conn.close()
+                
+                return jsonify({"message": f"The record with ID {id} was delete successfully."})
+            else:
+                return jsonify({"message": f"Missing student_id."})
+        
+        return jsonify({"message": f"Missing params."})
+
     # ========== DELETE STUDENT ENDPOINT ==========
     @app.route("/delete_student", methods=["POST"])
     @login_required(role_required=["administrator", "editor"])
-    def delete_record():
+    def delete_student():
         data = request.get_json() or {}
 
         if (data != {}):
@@ -406,6 +457,43 @@ def create_app():
 
             cur.close()
             conn.close()
+
+    # ========== DISTRICT RECORD ENDPOINT ==========
+    @app.route("/district_record", methods=["GET"])
+    @login_required(role_required=["administrator", "editor"])
+    def district_record():
+        conn = create_conn()
+        cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+
+        cur.execute("SELECT DISTINCT district_name from schools_districts;")
+        result = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+
+        return jsonify(result)
+
+    # ========== SCHOOL RECORD ENDPOINT ==========
+    @app.route("/schools_per_district", methods=["POST"])
+    @login_required(role_required=["administrator", "editor"])
+    def schools_record():
+
+        data = request.get_json() or {}
+        
+        if (data != {} and 'district_name' in data):
+            district = data.get("district_name")
+            
+            conn = create_conn()
+            cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+
+            cur.execute("SELECT DISTINCT school_name from schools_districts WHERE district_name = '{district}';")
+            result = cur.fetchall()
+        
+            cur.close()
+            conn.close()
+
+            return jsonify(result)
+
 
     # ========== STUDENT RECORD ENDPOINT ==========
     @app.route("/student_record_info", methods=["GET", "POST"])

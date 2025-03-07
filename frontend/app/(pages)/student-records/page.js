@@ -1,20 +1,17 @@
 "use client"
-
 import Box from '@mui/material/Box';
 import getConfigData from "@/app/utils/getConfigs"
 import React, {useEffect, useState} from "react";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import CloseIcon from '@mui/icons-material/Close';
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-
+import Button from '@mui/material/Button';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import {useSystemMessage} from "@/app/utils/contexts/SystemMessage";
 import "primereact/resources/themes/lara-light-cyan/theme.css";
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
 
 const getFullRecordLink = (rowData) => {
   return <Box component={"a"} sx={{color: "primary.dark"}} href={`/student-records/${rowData.student_id}`} title="View student full record">View Full Record</Box>;
@@ -24,40 +21,31 @@ export default function StudentRecordsPage() {
   // Getting user session data.
   const [studentRecords, setStudentRecords] = useState();
   const [selectedRows, setSelectedRows] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [uploadResponse, setUploadResponse] = useState()
 
   let gridFields = [];
   let orderedGridColumn = []
   const { userSession } = useAuth();
+  const { showSystemMessage, closeSystemMessage } = useSystemMessage();
+  const handleApiRequest = useHandleApiRequest();
 
   async function fetchStudentRecordInfo() {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student_record_info`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${userSession.user.accessToken}`
-        }
-      });
-
-      if (!response.ok) {
-        console.error("HTTP Error:", response.status);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching student record info:", error);
-    }
+    return await handleApiRequest({
+      action: "student_record_info",
+      method: "GET",
+      session: userSession,
+      bodyObject: null
+    });
   }
 
-  useEffect( ()=> {
-    if (userSession && !studentRecords){
-      fetchStudentRecordInfo().then(data=> {
-        setStudentRecords(data)
+  useEffect(() => {
+    if (userSession && !studentRecords) {
+      fetchStudentRecordInfo().then(data => {
+        if (data) {
+          setStudentRecords(data);
+        }
       });
     }
-  },[userSession])
+  }, [userSession]);
 
   // Get Student record fields from config file.
   const studentRecordFormFields = getConfigData()?.fields
@@ -101,34 +89,43 @@ export default function StudentRecordsPage() {
 
   const deleteStudentRecord = async () => {
     const studentIds = selectedRows.map( student => student.student_id)
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/delete_student`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${userSession.user.accessToken}`
-        },
-        body: JSON.stringify({student_id: studentIds}),
-      });
 
-      if (!response.ok) {
-        console.error("HTTP Error:", response.status);
-      } else {
+    return await handleApiRequest({
+      action: "delete_student",
+      method: "POST",
+      session: userSession,
+      bodyObject: JSON.stringify({student_id: studentIds})
+    }).then(data => {
+      if (data) {
         fetchStudentRecordInfo().then(data=> {
           setStudentRecords(data)
         });
+        setSelectedRows([]);
+        closeSystemMessage();
       }
-
-      const result = await response.json();
-      setUploadResponse(result);
-      setOpen(true);
-
-    } catch (error) {
-      console.error("Error fetching student record info:", error.message);
-    }
+    });
   }
 
-  const numberRows = 15;
+  const deleteConfirmation = () => showSystemMessage({
+    title: <><WarningAmberIcon fontSize="large"/> Warning</>,
+    content: (
+      <>
+        <p>{`Are you sure you want to delete ${selectedRows.length > 1 ? "these records" : "this record"}:`}</p>
+        <ul>
+          {
+            selectedRows?.map( el => <li key={el.student_id}><span>{el.student_id}</span> {el.first_name} {el.last_name}</li>)
+          }
+        </ul>
+        <p>This action can be undone.</p>
+      </>
+    ),
+    actions: (
+      <>
+        <Button variant="outlined" onClick={closeSystemMessage}>Cancel</Button>
+        <Button variant="contained" color="error" onClick={deleteStudentRecord}>Delete</Button>
+      </>
+    )
+  });
 
   return (
     <>
@@ -143,9 +140,9 @@ export default function StudentRecordsPage() {
                     aria-label="delete records"
                     title={"Delete records"}
                     size="large"
-                    sx={{color:"secondary.dark", "&:hover": {backgroundColor:"secondary.dark", color: "#fff"}}}
-                    disabled={!selectedRows.length > 0}
-                    onClick={deleteStudentRecord}
+                    sx={{color:"#fff", backgroundColor:"secondary.main", "&: hover": {backgroundColor:"secondary.dark"}}}
+                    disabled={!selectedRows.length}
+                    onClick={deleteConfirmation}
                   >
                     <DeleteIcon />
                   </IconButton>
@@ -166,49 +163,11 @@ export default function StudentRecordsPage() {
                 selectionMode={'checkbox'}
               >
                 <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                { tableColumns.map((col, i) => (
+                { tableColumns.map(col => (
                   <Column style={{fontSize: "14px"}} key={col.field} field={col.field} header={col.header} sortable={col.sortable} filter={col.filterEnabled} body={col.renderCell}/>
                 ))}
               </DataTable>
             </Box>
-            <Dialog
-              open={open}
-              onClose={()=> setOpen(false)}
-              aria-labelledby="alert-dialog-title"
-              aria-describedby="alert-dialog-description"
-              sx={{
-                "& .MuiDialog-container": {
-                  "& .MuiPaper-root": {
-                    width: "100%",
-                    maxWidth: "460px",
-                    minHeight: "200px"
-                  },
-                },
-              }}
-            >
-              <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
-                Upload response:
-              </DialogTitle>
-              <IconButton
-                aria-label="close"
-                onClick={()=> setOpen(false)}
-                sx={(theme) => ({
-                  position: 'absolute',
-                  right: 8,
-                  top: 8,
-                  color: theme.palette.grey[500],
-                })}
-              >
-                <CloseIcon />
-              </IconButton>
-              <DialogContent dividers>
-                <DialogContentText id="alert-dialog-description">
-                  {
-                    uploadResponse?.message
-                  }
-                </DialogContentText>
-              </DialogContent>
-            </Dialog>
           </>
         )
       }

@@ -6,28 +6,24 @@ import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
 import React, {useRef, useState} from "react";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from '@mui/material/DialogActions';
-import {signIn} from "next-auth/react";
+import {signIn, signOut} from "next-auth/react";
 import {passValidation} from "@/app/utils/globalFunctions";
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import InputAdornment from '@mui/material/InputAdornment';
 import OutlinedInput from '@mui/material/OutlinedInput';
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import {useSystemMessage} from "@/app/utils/contexts/SystemMessage";
+import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
 
 export default function ChangePassPage() {
-  const [error, setError] = useState(false)
-  const [open, setOpen] = useState(false);
-  const [fetchResponse, setFetchResponse] = useState()
-
+  const { showSystemMessage } = useSystemMessage();
   const { userSession } = useAuth();
+  const handleApiRequest = useHandleApiRequest();
 
   const [passwordError, setPasswordError] = useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
-
   const [confirmError, setConfirmError] = useState(false)
   const [confirmErrorMessage, setConfirmErrorMessage] = useState('')
 
@@ -52,7 +48,6 @@ export default function ChangePassPage() {
     // This function return an array of error validations.
     const passwordValidation = passValidation(password);
 
-    console.log(passwordValidation);
     // If array length, there are errors.
     if (passwordValidation.length) {
       setPasswordError(true);
@@ -76,22 +71,15 @@ export default function ChangePassPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (passwordError || confirmError) {
-      return;
+      return null;
     }
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/change_password`, {
+    // Executing change password action
+    return await handleApiRequest({
+      action: "change_password",
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${userSession.user.accessToken}`
-      },
-      body: JSON.stringify({password: newPass.current.value})
+      session: userSession,
+      bodyObject: JSON.stringify({password: newPass.current.value})
     });
-
-    const response = await res.json();
-
-    setFetchResponse(response);
-    setOpen(true);
   };
 
   return (
@@ -103,7 +91,39 @@ export default function ChangePassPage() {
           </Typography>
           <Box
             component="form"
-            onSubmit={handleSubmit}
+            onSubmit={(e) => handleSubmit(e).then( response => {
+              if(response) {
+                showSystemMessage({
+                  title: <><TaskAltIcon fontSize="large" /> Password reset successful</>,
+                  content: <p>{response?.message}</p>,
+                  actions: (
+                    <Button variant="contained" onClick={async () =>{
+                      const response = await signIn("credentials", {
+                        redirect: false,
+                        username: userSession.user.username,
+                        password: newPass.current.value,
+                      });
+
+                      if (!response.ok) {
+                        // console.error("HTTP Error:", response.status);
+                        if (response.status === 401) {
+                          // Handle token expiration (e.g., redirect to login or refresh token)
+                          showSystemMessage({
+                            title: <><WarningAmberIcon fontSize="large"/> <span>Session Expired</span></>,
+                            content: <p>Your session has expired. <br/>You will be redirected to the login page.</p>,
+                            actions: <Button variant="contained" color="primary" onClick={() => signOut()}>OK</Button>
+                          });
+                        }
+                        return null;
+                      } else  {
+                        // redirect and router.push do not work in prod mode.
+                        window.location.href = "/";
+                      }
+                    } }> Restart session </Button>
+                  )
+                });
+              }
+            })}
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
             <FormControl>
@@ -123,9 +143,7 @@ export default function ChangePassPage() {
                 endAdornment={
                   <InputAdornment position="end">
                     <IconButton
-                      aria-label={
-                        showPassword ? 'hide the password' : 'display the password'
-                      }
+                      aria-label={ showPassword ? 'hide the password' : 'display the password'}
                       onClick={handleClickShowPassword}
                       onMouseDown={handleMouseDownPassword}
                       onMouseUp={handleMouseUpPassword}
@@ -177,52 +195,6 @@ export default function ChangePassPage() {
           </Box>
         </CardContent>
       </Card>
-      <Dialog
-        open={open}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-        sx={{
-          "& .MuiDialog-container": {
-            "& .MuiPaper-root": {
-              width: "100%",
-              maxWidth: "460px",
-              minHeight: "200px"
-            },
-          },
-        }}
-      >
-        <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
-          Upload response:
-        </DialogTitle>
-        <DialogContent dividers>
-          <DialogContentText id="alert-dialog-description">
-            {
-              fetchResponse?.message
-            }
-          </DialogContentText>
-        </DialogContent>
-        {
-          !error && (
-            <DialogActions sx={{justifyContent: "center"}}>
-              <Button onClick={async () =>{
-                const response = await signIn("credentials", {
-                  redirect: false,
-                  username: userSession.user.username,
-                  password: newPass.current.value,
-                });
-
-                if(response?.error) {
-                  setFetchResponse('Error refreshing session');
-                  setError(true);
-                } else  {
-                  // redirect and router.push do not work in prod mode.
-                  window.location.href = "/";
-                }
-              } }> Restart session </Button>
-            </DialogActions>
-          )
-        }
-      </Dialog>
     </Box>
   );
 }
