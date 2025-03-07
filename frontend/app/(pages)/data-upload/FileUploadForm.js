@@ -27,8 +27,6 @@ const FileUpload = ({FormConfig}) => {
         const rows = content.split("\n");
         const csvHeaders = rows[0].split(",");
 
-        //console.log("CSV Headers:", csvHeaders);
-
         const jsonData = {
           file_name: file.name,
           table_name: FormConfig?.tableName,
@@ -46,7 +44,6 @@ const FileUpload = ({FormConfig}) => {
   // Handle file upload
   const handleUpload = async () => {
     const file = selectedFile;
-    console.log(file)
     const formData = new FormData();
     // Append file
     formData.append("file", file);
