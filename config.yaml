@@ -3,14 +3,12 @@ theme:
   logo: "/ptt_logo.png"
   colors:
     primary:
-      main: "#5E9DE8"
+      main: "#0F6DDC"
       light: "#ADCDF3"
-      dark: "#0F6DDC"
       contrastText: "#ffffff"
     secondary:
-      main: "#FF9097"
+      main: "#FF5A64"
       light: "#FFC7CA"
-      dark: "#FF5A64"
       contrastText: "#ffffff"
 
 --- # Categories

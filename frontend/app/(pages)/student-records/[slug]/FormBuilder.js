@@ -5,11 +5,15 @@ import {Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField} fro
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import {useSystemMessage} from "@/app/utils/contexts/SystemMessage";
 
-export default function FormBuilder({formFields, onCancel, defaultData, onSubmit, submitBtnTxt = 'save'}) {
+export default function FormBuilder({formFields, onCancel, defaultData, onSubmit, submitBtnTxt = 'save', onDelete }) {
   const [formData, setFormData] = useState(
     Object.fromEntries(formFields.map(field => [field["CSV column name"], defaultData?.[field["CSV column name"]] ?? '']))
   );
+
+  const { showSystemMessage, closeSystemMessage } = useSystemMessage();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -18,6 +22,12 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const handleDelete = (e) => {
+    e.preventDefault()
+    onDelete(formData);
+    closeSystemMessage();
+  }
 
   return (
     <Stack spacing={1} component="form" sx={{ p: 4 }} onSubmit={handleSubmit}>
@@ -72,6 +82,25 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
       }
       {/** Buttons */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+        {
+          onDelete &&  (
+            <Button
+              variant="contained"
+              color={"error"}
+              onClick={()=>showSystemMessage({
+                title: <><WarningAmberIcon fontSize="large"/> Warning</>,
+                content: <p>Are you sure you want to delete this record? This action can not be undone.</p>,
+                actions: (
+                  <>
+                    <Button variant="outlined" color="primary" onClick={closeSystemMessage}>Cancel</Button>
+                    <Button variant="contained" color="error" onClick={handleDelete}>Delete</Button>
+                  </>
+                )
+              })}>
+              Delete
+            </Button>
+          )
+        }
         {
           onCancel && (
             <Button variant="outlined" onClick={()=>onCancel()}>

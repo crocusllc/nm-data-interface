@@ -30,8 +30,8 @@ export default function MainMenu() {
       {
         <Stack component={"nav"} alignItems="center" sx={{
           '& a': { color: "primary.dark", padding: "18px"},
-          '& a:hover': { backgroundColor: "primary.main"},
-          '& a.active': { backgroundColor: "primary.dark", color: "#fff"}
+          '& a:hover': { color: "#fff"},
+          '& a.active': { borderLeft: "12px solid", borderColor: "primary.dark", color: "#fff", backgroundColor: "primary.main"}
         }}>
           {menuItems.filter(item => !item.protected || allowed).map(({ href, icon, label }) => (
             <Link

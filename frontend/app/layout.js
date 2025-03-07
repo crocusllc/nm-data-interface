@@ -12,6 +12,7 @@ import { ThemeProvider, CssBaseline } from "@mui/material";
 import theme from "@/app/utils/theme";
 
 import { Inter, Rubik } from "next/font/google";
+import {SystemMessageProvider} from "@/app/utils/contexts/SystemMessage";
 const inter = Inter({
   weight: ['300', '400', '500', '700'],
   subsets: ['latin'],
@@ -37,27 +38,29 @@ export default function RootLayout({ children }) {
           <CssBaseline />
           <SessionProvider>
             <AuthProvider>
-              <body className={`${inter.variable} ${rubik.variable}`}>
-              <Box sx={{
-                display: "grid",
-                gap: "20px",
-                gridTemplateColumns: "80px 1fr"
-              }}>
-                <Box component={"header"} sx={{gridColumn: "1 / 3"}}>
-                  <Header/>
-                </Box>
-                {
-                  !noSidebarPages && (
-                    <Box component={"aside"} sx={{gridColumn: "1 / 2"}}>
-                      <MainMenu/>
+              <SystemMessageProvider>
+                <body className={`${inter.variable} ${rubik.variable}`}>
+                  <Box sx={{
+                    display: "grid",
+                    gap: "20px",
+                    gridTemplateColumns: "80px 1fr"
+                  }}>
+                    <Box component={"header"} sx={{gridColumn: "1 / 3"}}>
+                      <Header/>
                     </Box>
-                  )
-                }
-                <Container  maxWidth="xl" component={"main"} sx={{gridColumn: noSidebarPages ? "1 / 3" : "2 / 3", paddingBottom: "20px", paddingRight: "20px", minHeight: "calc(100vh - 140px)"}}>
-                  {children}
-                </Container>
-              </Box>
-              </body>
+                    {
+                      !noSidebarPages && (
+                        <Box component={"aside"} sx={{gridColumn: "1 / 2"}}>
+                          <MainMenu/>
+                        </Box>
+                      )
+                    }
+                    <Container  maxWidth="xl" component={"main"} sx={{gridColumn: noSidebarPages ? "1 / 3" : "2 / 3", paddingBottom: "20px", paddingRight: "20px", minHeight: "calc(100vh - 140px)"}}>
+                      {children}
+                    </Container>
+                  </Box>
+                </body>
+              </SystemMessageProvider>
             </AuthProvider>
           </SessionProvider>
         </ThemeProvider>

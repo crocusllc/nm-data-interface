@@ -48,7 +48,7 @@ const uploadForms = [
   },
 ]
 
-export default function UploadForms() {
+export default function UploadForm() {
   return (
     <Stack spacing={2} maxWidth={"md"} margin={"auto"}>
       <Box sx={{marginLeft: "auto !important", width:"40px"}}>
@@ -60,7 +60,7 @@ export default function UploadForms() {
                   <ListItem key={i} disablePadding>
                     <ListItemButton component="a" href={template.path} download >
                       <ListItemAvatar >
-                        <Avatar sx={{ width: 32, height: 32 }} sx={{backgroundColor: "secondary.dark"}}>
+                        <Avatar sx={{ width: 32, height: 32, backgroundColor: "secondary.main" }}>
                           <SaveAltRoundedIcon fontSize={"small"}/>
                         </Avatar>
                       </ListItemAvatar>

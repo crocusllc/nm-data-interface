@@ -119,7 +119,7 @@ def create_app():
     # ========== DELETE USER ENDPOINT ==========
     @app.route("/delete_user", methods=["POST"])
     @login_required(role_required=["administrator"])
-    def update_record():
+    def delete_user():
         data = request.get_json() or {}
 
         if (data != {}):
