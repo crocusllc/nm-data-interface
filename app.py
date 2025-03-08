@@ -467,11 +467,12 @@ def create_app():
 
         cur.execute("SELECT DISTINCT district_name from schools_districts;")
         result = cur.fetchall()
-        
+
         cur.close()
         conn.close()
-
-        return jsonify(result)
+        res_list = [dict(row) for row in result]
+        list_to_strung = ';'.join([r["district_name"] for r in res_list])
+        return jsonify(list_to_strung)
 
     # ========== SCHOOL RECORD ENDPOINT ==========
     @app.route("/schools_per_district", methods=["POST"])
@@ -482,17 +483,18 @@ def create_app():
         
         if (data != {} and 'district_name' in data):
             district = data.get("district_name")
-            
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-            cur.execute("SELECT DISTINCT school_name from schools_districts WHERE district_name = '{district}';")
+            cur.execute("SELECT DISTINCT school_name FROM schools_districts WHERE district_name = %s;", (district,))
             result = cur.fetchall()
         
             cur.close()
             conn.close()
 
-            return jsonify(result)
+            res_list = [dict(row) for row in result]
+            list_to_strung = ';'.join([r["school_name"] for r in res_list])
+            return jsonify(list_to_strung)
 
 
     # ========== STUDENT RECORD ENDPOINT ==========

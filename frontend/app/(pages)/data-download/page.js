@@ -7,6 +7,7 @@ import {
 import getConfigData from "@/app/utils/getConfigs";
 import FormBuilder from "@/app/(pages)/student-records/[slug]/FormBuilder";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
+import {GlobalValuesProvider} from "@/app/utils/contexts/GobalValues";
 
 export default function DownloadDataPage() {
   const { userSession } = useAuth();
@@ -69,26 +70,29 @@ export default function DownloadDataPage() {
   };
 
   return (
-    <Box sx={{ maxWidth: "600px"}}>
-      <Box sx={{ marginBottom: "16px", padding: "16px", border: "1px solid #ccc", borderRadius: "4px" }}>
-        <Typography variant="h6">Download All Records:</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={()=>handleDownload([])}
-          sx={{ marginTop: "8px" }}
-        >
-          Download
-        </Button>
+    <GlobalValuesProvider>
+      <Box sx={{ maxWidth: "600px"}}>
+        <Box sx={{ marginBottom: "16px", padding: "16px", border: "1px solid #ccc", borderRadius: "4px" }}>
+          <Typography variant="h6">Download All Records:</Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={()=>handleDownload([])}
+            sx={{ marginTop: "8px" }}
+          >
+            Download
+          </Button>
+        </Box>
+
+        <Box sx={{ marginBottom: "16px", padding: "16px", border: "1px solid #ccc", borderRadius: "4px" }}>
+          <Typography variant="h6" gutterBottom>
+            Download Selected Records:
+          </Typography>
+
+          <FormBuilder formFields={downLoadFormFields} submitBtnTxt={"Download"} onSubmit={handleDownload}/>
+        </Box>
       </Box>
 
-      <Box sx={{ marginBottom: "16px", padding: "16px", border: "1px solid #ccc", borderRadius: "4px" }}>
-        <Typography variant="h6" gutterBottom>
-          Download Selected Records:
-        </Typography>
-
-        <FormBuilder formFields={downLoadFormFields} submitBtnTxt={"Download"} onSubmit={handleDownload}/>
-      </Box>
-    </Box>
+    </GlobalValuesProvider>
   );
 };

@@ -103,7 +103,7 @@ fields:
         Type: select
         Validation required: false
         Dropdown or validation values: "Spanish,Navajo,Keres,Zuni,Other (Text Entry)"
-        multi-select: false
+        multi-select: true
         Required field: false
         Include in bulk upload?: true
         Display on Student Record page?: true
@@ -283,7 +283,10 @@ fields:
         CSV column name: placement_district
         Type: select
         Validation required: false
-        Dropdown or validation values: 'Public School 1,Public School 2,District 5, District 6'
+        Global value: true
+        Validation values from API:
+          path: "district_record"
+          method: "GET"
         multi-select: false
         Required field: true
         Include in bulk upload?: true
@@ -298,7 +301,10 @@ fields:
         CSV column name: placement_school
         Type: select
         Validation required: false
-        Dropdown or validation values: 'School 5,Springfield General Hospital,Riverview Nursing Academy,Harborview Rehabilitation Center,Pine Valley Community Clinic'
+        Validation values from API :
+          path: "schools_per_district"
+          method: "POST"
+        Depends on: placement_district
         multi-select: false
         Required field: true
         Include in bulk upload?: true
