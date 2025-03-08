@@ -171,7 +171,7 @@ def create_app():
 
         query = f"INSERT INTO users (username, password_hash, user_email, password_expiration_date, user_role) VALUES ('{username}','{hash}','{useremail}','{expiration_date}','{userrole}') RETURNING user_id;"
         cur.execute(query)
-        returned_id = cur.fetchone()[0]
+        returned_id = cur.fetchone()['user_id']
         
         conn.commit()
 
@@ -249,6 +249,7 @@ def create_app():
                     query = f"""
                     INSERT INTO {table_name} ({', '.join(columns)}) 
                     VALUES ({', '.join(['%s' for _ in columns])})
+                    RETURNING {'student_id' if table_name == 'student_info' else 'id' }
                     """
                     conn = create_conn()
                     cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
@@ -259,7 +260,7 @@ def create_app():
                     for row in values:
                         cur.execute(query, row)
 
-                        returned_id = cur.fetchone()[0]
+                        returned_id = cur.fetchone()['student_id' if table_name == 'student_info' else 'id']
                         conn.commit()
 
                         query_log = f"INSERT INTO logs(user_id, file_name, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, '{file_name}', 'uploaded', CURRENT_TIMESTAMP, '{table_name}', {returned_id}, {total_records}, 1, 0);"
