@@ -1,5 +1,4 @@
 "use client"
-
 import Box from '@mui/material/Box';
 import { useParams } from "next/navigation";
 import {useEffect, useState} from "react";
@@ -7,10 +6,12 @@ import CategoryManager from "@/app/(pages)/student-records/[slug]/CategoryManage
 import Stack from '@mui/material/Stack';
 import getConfigData from "@/app/utils/getConfigs"
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
+import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
 
 export default function StudentRecordPage() {
   const { userSession } = useAuth();
   const params = useParams();
+  const handleApiRequest = useHandleApiRequest();
   const slug = params.slug;
 
   const [studentRecordData, setStudentRecordData] = useState();
@@ -20,30 +21,16 @@ export default function StudentRecordPage() {
   useEffect(()=> {
     if(userSession && loadData) {
       setLoadData(false);
-      async function fetchStudentRecordInfo() {
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student_record_info`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${userSession.user.accessToken}`
-            },
-            body: JSON.stringify({student_id: slug})
-          });
 
-          if (!response.ok) {
-            console.error("HTTP Error:", response.status);
-          }
-
-          return await response.json();
-
-        } catch (error) {
-          console.error("Error fetching student record info:", error);
+      handleApiRequest({
+        action: "student_record_info",
+        method: "POST",
+        session: userSession,
+        bodyObject: JSON.stringify({student_id: slug})
+      }).then(data => {
+        if(data) {
+          setStudentRecordData(data);
         }
-      }
-
-      fetchStudentRecordInfo().then(data => {
-        setStudentRecordData(data);
       })
     }
   }, [userSession, loadData])
