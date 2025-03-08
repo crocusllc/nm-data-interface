@@ -462,7 +462,15 @@ def create_app():
                 return '\'' if to_update[key] != '' else ''
 
             def value_or_null(key):
-                return to_update[key] if to_update[key] != '' else 'NULL'
+                value_returned = to_update[key]
+
+                if isinstance(to_update[key], list):
+                  value_returned = ';'.join(to_update[key])
+                
+                if to_update[key] == '' or to_update[key] is None:
+                  value_returned = 'NULL'
+
+                return value_returned
 
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
