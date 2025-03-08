@@ -96,7 +96,7 @@ def create_app():
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        cur.execute(f"SELECT user_id, user_role, password_hash, username, new_password from users where username='{username}';")
+        cur.execute(f"SELECT user_id, user_role, password_hash, username, new_password from users where username=%s;", (username,))
         user = cur.fetchone()
 
         cur.close()
@@ -506,12 +506,12 @@ def create_app():
         data = request.get_json() or {}
         
         if (data != {} and 'source' in data):
-            table = data.get("source")[0]
+            table = data.get("source")
 
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-            cur.execute("SELECT * FROM logs WHERE source_table={table};")
+            cur.execute("SELECT * FROM logs WHERE source_table=%s;", (table,))
             result = cur.fetchall()
 
             cur.close()
@@ -529,11 +529,11 @@ def create_app():
         data = request.get_json() or {}
         
         if (data != {} and 'district_name' in data):
-            district = data.get("district_name")[0]
+            district = data.get("district_name")
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-            cur.execute(f"SELECT DISTINCT school_name FROM schools_districts WHERE district_name = '{district}';")
+            cur.execute("SELECT DISTINCT school_name FROM schools_districts WHERE district_name = %s;", (district,))
             result = cur.fetchall()
 
             cur.close()
@@ -554,9 +554,9 @@ def create_app():
             data = request.get_json() or {}
         
             if (data != {}):
-                student_id = data.get("student_id")[0]
+                student_id = data.get("student_id")
 
-                cur.execute(f"SELECT * from student_info where student_id={student_id};")
+                cur.execute("SELECT * from student_info where student_id=%s;", (student_id,))
                 result = cur.fetchone()
 
                 if result is not None:
@@ -565,12 +565,12 @@ def create_app():
                     page_result = {}
                     page_result['student_info'] = [result_student]
 
-                    cur.execute(f"SELECT * from program_info where student_id={student_id};")
+                    cur.execute("SELECT * from program_info where student_id=%s;", (student_id,))
                     result_program = cur.fetchall()
 
                     page_result['program_info'] = result_program
 
-                    cur.execute("SELECT * from clinical_placements where student_id={student_id};")
+                    cur.execute("SELECT * from clinical_placements where student_id=%s;", (student_id,))
                     result_clinical = cur.fetchall()
 
                     page_result['clinical_placements'] = result_clinical
