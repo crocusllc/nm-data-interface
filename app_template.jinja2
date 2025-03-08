@@ -484,7 +484,7 @@ def create_app():
                     cur.execute(query)
                     conn.commit()
                     
-                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, {source_to_table[source]}, {id}, 1, 1, 0);"
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, '{source_to_table[source]}', {id}, 1, 1, 0);"
                     
                     cur.execute(query_log)
                     conn.commit()
@@ -498,7 +498,7 @@ def create_app():
                     cur.execute(query)
                     conn.commit()
 
-                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, {source_to_table[source]}, {student_id}, 1, 1, 0);"
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, '{source_to_table[source]}', {student_id}, 1, 1, 0);"
                     
                     cur.execute(query_log)
                     conn.commit()
@@ -517,7 +517,7 @@ def create_app():
                 cur.execute(query)
                 conn.commit()
 
-                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'created', CURRENT_TIMESTAMP, {source_to_table[source]}, {student_id}, 1, 1, 0);"
+                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'created', CURRENT_TIMESTAMP, '{source_to_table[source]}', {student_id}, 1, 1, 0);"
                     
                 cur.execute(query_log)
                 conn.commit()
