@@ -36,6 +36,7 @@ export const { handlers, auth } = NextAuth({
     // Attach user data to the JWT
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
         token.username = user.username;
         token.role = user.role;
         token.accessToken = user.token;
@@ -47,6 +48,7 @@ export const { handlers, auth } = NextAuth({
     // Include JWT data in the session object
     async session({ session, token }) {
       session.user = {
+        id: token.id,
         username: token.username,
         role: token.role,
         accessToken: token.accessToken,

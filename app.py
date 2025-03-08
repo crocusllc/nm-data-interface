@@ -18,6 +18,14 @@ def is_json(str):
     return False
   return True
 
+def get_header_data(headers, key):
+  auth_header = headers.get('Authorization', None)
+  token = auth_header.split(" ")[1]
+  decoded = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+  data = decoded.get(key)
+
+  return data
+
 def create_conn():
     # Set up DB engine
     conn = psycopg2.connect(
@@ -88,7 +96,7 @@ def create_app():
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT user_role, password_hash, username, new_password from users where username=%s;", (username,))
+        cur.execute(f"SELECT user_id, user_role, password_hash, username, new_password from users where username='{username}';")
         user = cur.fetchone()
 
         cur.close()
@@ -106,6 +114,7 @@ def create_app():
         token = jwt.encode(
             {
                 "sub": username,
+                "id": user['user_id'],
                 "role": user['user_role'],
                 "exp": expiration
             },
@@ -113,7 +122,7 @@ def create_app():
             algorithm="HS256"
         )
 
-        return jsonify({"token": token, "username": user['username'], "role": user['user_role'], "new_password": user['new_password']})
+        return jsonify({"token": token, "id": user['user_id'], "username": user['username'], "role": user['user_role'], "new_password": user['new_password']})
 
 
     # ========== DELETE USER ENDPOINT ==========
@@ -178,11 +187,8 @@ def create_app():
     def change_password():
         data = request.get_json() or {}
         password = data.get("password")
-        auth_header = request.headers.get('Authorization', None)
-       
-        token = auth_header.split(" ")[1]
-        decoded = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
-        user = decoded.get("sub")
+        
+        user = get_header_data(request.headers,'sub')
 
         bytes = password.encode("utf-8")
         hash = bcrypt.hash(bytes)
@@ -253,6 +259,15 @@ def create_app():
                 
                     conn.commit()
 
+                    user_id = get_header_data(request.headers, 'id')
+                    total_records= len(values)
+             
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, total_records, valid_records, invalid_records) VALUES ({user_id}, 'upload', CURRENT_TIMESTAMP, '{table_name}', {total_records}, {total_records}, 0);"
+                    
+                    cur.execute(query_log)
+
+                    conn.commit()
+
                     cur.close()
                     conn.close()
             except psycopg2.Error as e:
@@ -312,9 +327,6 @@ def create_app():
         cur.execute(query_all)
         results = cur.fetchall()
 
-        cur.close()
-        conn.close()
-
         if len(results) >= 1:
             output = io.StringIO()
             writer = csv.writer(output)
@@ -328,6 +340,19 @@ def create_app():
                     writer.writerow([row[field] for field in fields])
 
             output.seek(0)
+
+            user_id = get_header_data(request.headers, 'id')
+            total_records= len(results)
+             
+            query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, total_records, valid_records, invalid_records) VALUES ({user_id}, 'download', CURRENT_TIMESTAMP, 'all', {total_records}, {total_records}, 0);"
+                    
+            cur.execute(query_log)
+
+            conn.commit()
+            
+            cur.close()
+            conn.close()
+
             return send_file(
                 io.BytesIO(output.getvalue().encode("utf-8")),
                 mimetype="text/csv",
@@ -474,6 +499,28 @@ def create_app():
         list_to_strung = ';'.join([r["district_name"] for r in res_list])
         return jsonify(list_to_strung)
 
+    # ========== LOGS ENDPOINT ==========
+    @app.route("/log", methods=["POST"])
+    @login_required(role_required=["administrator", "editor"])
+    def logs():
+        data = request.get_json() or {}
+        
+        if (data != {} and 'source' in data):
+            table = data.get("source")[0]
+
+            conn = create_conn()
+            cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+
+            cur.execute("SELECT * FROM logs WHERE source_table={table};")
+            result = cur.fetchall()
+
+            cur.close()
+            conn.close()
+        
+            return jsonify(result)
+
+        return jsonify({"error": "Missing params."})
+
     # ========== SCHOOL RECORD ENDPOINT ==========
     @app.route("/schools_per_district", methods=["POST"])
     @login_required(role_required=["administrator", "editor"])
@@ -482,20 +529,19 @@ def create_app():
         data = request.get_json() or {}
         
         if (data != {} and 'district_name' in data):
-            district = data.get("district_name")
+            district = data.get("district_name")[0]
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-            cur.execute("SELECT DISTINCT school_name FROM schools_districts WHERE district_name = %s;", (district,))
+            cur.execute(f"SELECT DISTINCT school_name FROM schools_districts WHERE district_name = '{district}';")
             result = cur.fetchall()
-        
+
             cur.close()
             conn.close()
 
             res_list = [dict(row) for row in result]
-            list_to_strung = ';'.join([r["school_name"] for r in res_list])
-            return jsonify(list_to_strung)
-
+            list_to_string = ';'.join([r["school_name"] for r in res_list])
+            return jsonify(list_to_string)
 
     # ========== STUDENT RECORD ENDPOINT ==========
     @app.route("/student_record_info", methods=["GET", "POST"])
@@ -508,9 +554,9 @@ def create_app():
             data = request.get_json() or {}
         
             if (data != {}):
-                student_id = data.get("student_id")
+                student_id = data.get("student_id")[0]
 
-                cur.execute("SELECT * from student_info where student_id=%s;", (student_id,))
+                cur.execute(f"SELECT * from student_info where student_id={student_id};")
                 result = cur.fetchone()
 
                 if result is not None:
@@ -519,12 +565,12 @@ def create_app():
                     page_result = {}
                     page_result['student_info'] = [result_student]
 
-                    cur.execute("SELECT * from program_info where student_id=%s;", (student_id,))
+                    cur.execute(f"SELECT * from program_info where student_id={student_id};")
                     result_program = cur.fetchall()
 
                     page_result['program_info'] = result_program
 
-                    cur.execute("SELECT * from clinical_placements where student_id=%s;", (student_id,))
+                    cur.execute("SELECT * from clinical_placements where student_id={student_id};")
                     result_clinical = cur.fetchall()
 
                     page_result['clinical_placements'] = result_clinical
