@@ -59,7 +59,6 @@ def create_app():
         except Exception as e:
             return f"Error connecting to DB: {e}"
 
-
     # ========== AUTH DECORATOR ==========
     def login_required(role_required=None):
         def decorator(f):
@@ -254,20 +253,20 @@ def create_app():
                     conn = create_conn()
                     cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
             # Execute batch insert
-                    for row in values:
-                        cur.execute(query, row)
-                
-                    conn.commit()
-
                     user_id = get_header_data(request.headers, 'id')
                     total_records= len(values)
-             
-                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, total_records, valid_records, invalid_records) VALUES ({user_id}, 'upload', CURRENT_TIMESTAMP, '{table_name}', {total_records}, {total_records}, 0);"
                     
-                    cur.execute(query_log)
+                    for row in values:
+                        cur.execute(query, row)
 
-                    conn.commit()
+                        returned_id = cur.fetchone()[0]
+                        conn.commit()
 
+                        query_log = f"INSERT INTO logs(user_id, file_name, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, '{file_name}', 'uploaded', CURRENT_TIMESTAMP, '{table_name}', {returned_id}, {total_records}, 1, 0);"
+                        cur.execute(query_log)
+
+                        conn.commit()
+ 
                     cur.close()
                     conn.close()
             except psycopg2.Error as e:
@@ -328,6 +327,9 @@ def create_app():
         results = cur.fetchall()
 
         if len(results) >= 1:
+            user_id = get_header_data(request.headers, 'id')
+            total_records= len(results)
+            
             output = io.StringIO()
             writer = csv.writer(output)
 
@@ -339,17 +341,14 @@ def create_app():
                 else:
                     writer.writerow([row[field] for field in fields])
 
+                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'downloaded', CURRENT_TIMESTAMP, 'all', {row['student_id']}, {total_records}, 1, 0);"
+                    
+                cur.execute(query_log)
+
+                conn.commit()
+            
             output.seek(0)
 
-            user_id = get_header_data(request.headers, 'id')
-            total_records= len(results)
-             
-            query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, total_records, valid_records, invalid_records) VALUES ({user_id}, 'download', CURRENT_TIMESTAMP, 'all', {total_records}, {total_records}, 0);"
-                    
-            cur.execute(query_log)
-
-            conn.commit()
-            
             cur.close()
             conn.close()
 
@@ -372,6 +371,8 @@ def create_app():
             if 'table_name' in data and 'id' in data:
                 id = data.get("id")
                 table = data.get("table_name")
+                
+                user_id = get_header_data(request.headers, 'id')
 
                 conn = create_conn()
                 cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
@@ -380,6 +381,11 @@ def create_app():
                 cur.execute(query)
                 conn.commit()
 
+                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, {table}, {id}, 1, 1, 0);"
+                    
+                cur.execute(query_log)
+                conn.commit()
+ 
                 cur.close()
                 conn.close()
                 
@@ -400,6 +406,8 @@ def create_app():
                 student_ids = data.get("student_id")
 
                 for student_id in student_ids:
+                    user_id = get_header_data(request.headers, 'id')
+
                     conn = create_conn()
                     cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
                     
@@ -407,6 +415,11 @@ def create_app():
                     cur.execute(query)
                     conn.commit()
 
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, 'student_info', {student_id}, 1, 1, 0);"
+                    
+                    cur.execute(query_log)
+                    conn.commit()
+    
                     cur.close()
                     conn.close()
                     
@@ -426,6 +439,7 @@ def create_app():
             id = data.get("id")
             student_id = data.get("student_id")
             source = data.get("source")
+            user_id = get_header_data(request.headers, 'id')
 
             # Map source to tables
             source_to_table = {
@@ -460,12 +474,28 @@ def create_app():
                     query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE id = {id};'
                     cur.execute(query)
                     conn.commit()
-
+                    
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, {source_to_table[source]}, {id}, 1, 1, 0);"
+                    
+                    cur.execute(query_log)
+                    conn.commit()
+    
+                    cur.close()
+                    conn.close()
+                    
                     return jsonify({"message": f"The record was updated successfully."})
                 else:
                     query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE student_id = {student_id};'
                     cur.execute(query)
                     conn.commit()
+
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, {source_to_table[source]}, {student_id}, 1, 1, 0);"
+                    
+                    cur.execute(query_log)
+                    conn.commit()
+    
+                    cur.close()
+                    conn.close()
 
                     return jsonify({"message": f"The record was created successfully."})
 
@@ -478,10 +508,15 @@ def create_app():
                 cur.execute(query)
                 conn.commit()
 
-                return jsonify({"message": f"The record was created successfully."})
+                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'created', CURRENT_TIMESTAMP, {source_to_table[source]}, {student_id}, 1, 1, 0);"
+                    
+                cur.execute(query_log)
+                conn.commit()
+    
+                cur.close()
+                conn.close()
 
-            cur.close()
-            conn.close()
+                return jsonify({"message": f"The record was created successfully."})
 
     # ========== DISTRICT RECORD ENDPOINT ==========
     @app.route("/district_record", methods=["GET"])
