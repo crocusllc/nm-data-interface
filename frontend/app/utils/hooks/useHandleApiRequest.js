@@ -9,8 +9,11 @@ export function useHandleApiRequest() {
 
   const handleError = (errorCode, action, message) => {
     let title, content, actions;
-
     switch (errorCode) {
+      case 400:
+        title = <><WarningAmberIcon fontSize="large"/> Bad Request</>;
+        content = <p>Malformed request syntax</p>;
+        break;
       case 401:
         title = <><WarningAmberIcon fontSize="large"/> Session Expired</>;
         content = <p>Your session has expired. <br />You will be redirected to the login page.</p>;
