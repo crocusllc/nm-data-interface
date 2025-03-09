@@ -18,6 +18,11 @@ export default function DatasetTable({rowsData, columnsData, selectionHook = nul
       onSelectionChange={selectionFn}
       selectionMode={selectionMode}
     >
+      {
+        selectionHook && (
+          <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
+        )
+      }
       { columnsData.map(col => (
         <Column style={{fontSize: "14px"}} key={col.field} field={col.field} header={col.header} sortable={col.sortable} filter={col.filterEnabled} body={col.renderCell}/>
       ))}
