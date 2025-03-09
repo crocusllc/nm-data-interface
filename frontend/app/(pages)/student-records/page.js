@@ -8,10 +8,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import Button from '@mui/material/Button';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {useSystemMessage} from "@/app/utils/contexts/SystemMessage";
-import "primereact/resources/themes/lara-light-cyan/theme.css";
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
+import DatasetTable from "@/app/components/DatasetTable/DatasetTable";
 
 const getFullRecordLink = (rowData) => {
   return <Box component={"a"} sx={{color: "primary.dark"}} href={`/student-records/${rowData.student_id}`} title="View student full record">View Full Record</Box>;
@@ -150,23 +148,7 @@ export default function StudentRecordsPage() {
               )
             }
             <Box>
-              <DataTable
-                value={studentRecords}
-                showGridlines
-                paginator
-                rows={20}
-                rowsPerPageOptions={[5, 10, 20, 50]}
-                currentPageReportTemplate="{first} to {last} of {totalRecords}"
-                removableSort
-                selection={selectedRows}
-                onSelectionChange={(e) => setSelectedRows(e.value)}
-                selectionMode={'checkbox'}
-              >
-                <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                { tableColumns.map(col => (
-                  <Column style={{fontSize: "14px"}} key={col.field} field={col.field} header={col.header} sortable={col.sortable} filter={col.filterEnabled} body={col.renderCell}/>
-                ))}
-              </DataTable>
+              <DatasetTable rowsData={studentRecords} columnsData={tableColumns} selectionMode={'checkbox'} selectionFn={(e) => setSelectedRows(e.value)} selectionHook={selectedRows}/>
             </Box>
           </>
         )
