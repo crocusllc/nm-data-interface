@@ -72,7 +72,7 @@ fields:
         CSV column name: "program_completion_status"
         Type: select
         Validation required: false
-        Dropdown or validation values: "In progress,Complete,Withdrawn,pIn progress"
+        Dropdown or validation values: "In progress;Complete;Withdrawn;pIn progress"
         multi-select: false
         Required field: true
         Include in bulk upload?: true
@@ -102,7 +102,7 @@ fields:
         CSV column name: "focus_languages"
         Type: select
         Validation required: false
-        Dropdown or validation values: "Spanish,Navajo,Keres,Zuni,Other (Text Entry)"
+        Dropdown or validation values: "Spanish;Navajo;Keres;Zuni;Other (Text Entry)"
         multi-select: true
         Required field: false
         Include in bulk upload?: true
@@ -132,7 +132,7 @@ fields:
         CSV column name: first_generation_status
         Type: select
         Validation required: false
-        Dropdown or validation values: 'Yes,No,Unknown'
+        Dropdown or validation values: 'Yes;No;Unknown'
         multi-select: false
         Required field: false
         Include in bulk upload?: true
@@ -163,7 +163,7 @@ fields:
         Data Label Description (Crocus Addition)': 'Type Of Clinical Placement'
         Type: select
         Validation required: false
-        Dropdown or validation values: 'Student Teaching,Residency,Teacher Of Record,Administrator Internship'
+        Dropdown or validation values: 'Student Teaching;Residency;Teacher Of Record;Administrator Internship'
         multi-select: false
         Required field: true
         Include in bulk upload?: true
@@ -238,8 +238,8 @@ fields:
         CSV column name: placement_grade_level
         Type: select
         Validation required: false
-        Dropdown or validation values: 'PK,K,1,2,3,4,5,6,7,8,9,9-12'
-        multi-select: false
+        Dropdown or validation values: 'PK;K;1;2;3;4;5;6;7,;8;9;9-12'
+        multi-select: true
         Required field: true
         Include in bulk upload?: true
         Display on Student Record page?: true
@@ -253,8 +253,8 @@ fields:
         CSV column name: placement_licensure_level
         Type: select
         Validation required: false
-        Dropdown or validation values: 'Birth-PreK,PreK-3,Elementary,K-8,Secondary 7-12'
-        multi-select: false
+        Dropdown or validation values: 'Birth-PreK;PreK-3;Elementary;K-8;Secondary 7-12'
+        multi-select: true
         Required field: false
         Include in bulk upload?: true
         Display on Student Record page?: true
@@ -268,7 +268,7 @@ fields:
         CSV column name: placement_content_area
         Type: select
         Validation required: true
-        Dropdown or validation values: 'Agriculture,Business Education,Computer Science,Family And Consumer Science,Health,History (Social Studies),Language Arts,Library Media,Mathematics,Modern,Classical And Native Langauges,Performing Arts,Physical Education,Psychology,Science,Technology Education,Visual Arts'
+        Dropdown or validation values: 'Agriculture;Business Education;Computer Science;Family And Consumer Science;Health,History (Social Studies);Language Arts;Library Media;Mathematics;Modern;Classical And Native Langauges;Performing Arts;Physical Education;Psychology;Science;Technology Education;Visual Arts'
         multi-select: false
         Required field: false
         Include in bulk upload?: true
@@ -589,7 +589,7 @@ fields:
         CSV column name: ihe_enrollment_status
         Type: text
         Validation required: true
-        Dropdown or validation values: 'Current Enrollee,On Leave,Graduated,Withdrawn'
+        Dropdown or validation values: 'Current Enrollee;On Leave;Graduated;Withdrawn'
         multi-select: false
         Required field: true
         Include in bulk upload?: true
@@ -619,7 +619,7 @@ fields:
         CSV column name: academic_level
         Type: text
         Validation required: true
-        Dropdown or validation values: 'Undergraduate,Graduate/Post-Baccalaureate'
+        Dropdown or validation values: 'Undergraduate;Graduate/Post-Baccalaureate'
         multi-select: false
         Required field: true
         Include in bulk upload?: true
@@ -634,7 +634,7 @@ fields:
         CSV column name: academic_award_received
         Type: text
         Validation required: true
-        Dropdown or validation values: 'Bachelor''s,Master''s,Certificate,Ed Specialist,N/A,NULL'
+        Dropdown or validation values: 'Bachelor''s;Master''s;Certificate;Ed Specialist;N/A;NULL'
         multi-select: false
         Required field: false
         Include in bulk upload?: true
@@ -874,7 +874,7 @@ fields:
         CSV column name: gender
         Type: text
         Validation required: true
-        Dropdown or validation values: 'Female,Male,Other,No Response'
+        Dropdown or validation values: 'Female;Male;Other;No Response'
         multi-select: false
         Required field: false
         Include in bulk upload?: true
