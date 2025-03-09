@@ -7,17 +7,23 @@ import React from "react";
 export function useHandleApiRequest() {
   const { showSystemMessage } = useSystemMessage();
 
-  const handleError = (errorCode, action, message) => {
+  const handleError = (errorCode, action, message, errorResponse) => {
     let title, content, actions;
+    const tokenError = ["Token expired", "Invalid token"].includes(errorResponse?.error);
+
     switch (errorCode) {
       case 400:
         title = <><WarningAmberIcon fontSize="large"/> Bad Request</>;
         content = <p>Malformed request syntax</p>;
         break;
       case 401:
-        title = <><WarningAmberIcon fontSize="large"/> Session Expired</>;
-        content = <p>Your session has expired. <br />You will be redirected to the login page.</p>;
-        actions = <Button variant="contained" color="primary" onClick={() => signOut()}>OK</Button>;
+        title = <><WarningAmberIcon fontSize="large"/> Unauthorized</>;
+        content = tokenError
+          ? <p>{`${message}. ${errorResponse.error}`}. <br />You will be redirected to the login page.</p>
+          : <p>Your request could not be processed.</p>
+        actions =  tokenError
+          ? <Button variant="contained" color="primary" onClick={() => signOut()}>OK</Button>
+          : null
         break;
       case 403:
         title = <><WarningAmberIcon fontSize="large"/> Access Denied</>;
@@ -33,7 +39,7 @@ export function useHandleApiRequest() {
         break;
       default:
         title = <><WarningAmberIcon fontSize="large"/> {action.replace("_", " ")} Error</>;
-        content = <p>{message || "An unexpected error occurred."}</p>;
+        content = <p>{ message || "An unexpected error occurred."}</p>;
     }
 
     return({ title, content, actions });
@@ -44,7 +50,8 @@ export function useHandleApiRequest() {
 
     // On error response always be null.
     if (result?.error) {
-      showSystemMessage(handleError(result.error, action, result.message));
+      const errorResponse = await result?.response?.json();
+      showSystemMessage(handleError(result.error, action, result.message, errorResponse));
       return null;
     }
 
