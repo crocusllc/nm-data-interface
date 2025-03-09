@@ -39,6 +39,14 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
         formFields.map( (field, i)=> {
           if (field?.Type === "select") {
             if(field['Dropdown or validation values']) {
+              let multi;
+              if(field["multi-select"]) {
+                const value = formData?.[field['CSV column name']];
+                // This variable is an array when set by the form.
+                // The database store it as a string with values separated by ";".
+                multi = Array.isArray(value) ? value : value?.split(';') || [];
+              }
+
               return (
                 <FormControl variant="filled" fullWidth key={i} required={field["Required field"]}>
                   <InputLabel id={`${[field['CSV column name']]}-label`}>
@@ -48,7 +56,7 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
                     labelId={`${[field['CSV column name']]}-label`}
                     id={field['CSV column name']}
                     value={ field["multi-select"]
-                      ? (Array.isArray(formData?.[field['CSV column name']]) ? formData?.[field['CSV column name']] : [] )
+                      ? multi
                       : formData?.[field['CSV column name']]}
                     label={field['Data element label']}
                     onChange={(e) => handleChange(field['CSV column name'], e.target.value)}
