@@ -63,7 +63,7 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
                     multiple={field["multi-select"]}
                   >
                     {
-                      field['Dropdown or validation values']?.split(",").map( (opt, i) => <MenuItem key={i} value={opt}>{opt}</MenuItem>)
+                      field['Dropdown or validation values']?.split(";").map( (opt, i) => <MenuItem key={i} value={opt}>{opt}</MenuItem>)
                     }
                   </Select>
                 </FormControl>
