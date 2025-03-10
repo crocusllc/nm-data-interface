@@ -18,6 +18,14 @@ def is_json(str):
     return False
   return True
 
+def get_header_data(headers, key):
+  auth_header = headers.get('Authorization', None)
+  token = auth_header.split(" ")[1]
+  decoded = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+  data = decoded.get(key)
+
+  return data
+
 def create_conn():
     # Set up DB engine
     conn = psycopg2.connect(
@@ -50,7 +58,6 @@ def create_app():
             return f"Hello, World! PostgreSQL version: {db_version}"
         except Exception as e:
             return f"Error connecting to DB: {e}"
-
 
     # ========== AUTH DECORATOR ==========
     def login_required(role_required=None):
@@ -88,7 +95,7 @@ def create_app():
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT user_role, password_hash, username, new_password from users where username=%s;", (username,))
+        cur.execute(f"SELECT user_id, user_role, password_hash, username, new_password from users where username=%s;", (username,))
         user = cur.fetchone()
 
         cur.close()
@@ -106,6 +113,7 @@ def create_app():
         token = jwt.encode(
             {
                 "sub": username,
+                "id": user['user_id'],
                 "role": user['user_role'],
                 "exp": expiration
             },
@@ -113,7 +121,7 @@ def create_app():
             algorithm="HS256"
         )
 
-        return jsonify({"token": token, "username": user['username'], "role": user['user_role'], "new_password": user['new_password']})
+        return jsonify({"token": token, "id": user['user_id'], "username": user['username'], "role": user['user_role'], "new_password": user['new_password']})
 
 
     # ========== DELETE USER ENDPOINT ==========
@@ -163,7 +171,7 @@ def create_app():
 
         query = f"INSERT INTO users (username, password_hash, user_email, password_expiration_date, user_role) VALUES ('{username}','{hash}','{useremail}','{expiration_date}','{userrole}') RETURNING user_id;"
         cur.execute(query)
-        returned_id = cur.fetchone()[0]
+        returned_id = cur.fetchone()['user_id']
         
         conn.commit()
 
@@ -178,11 +186,8 @@ def create_app():
     def change_password():
         data = request.get_json() or {}
         password = data.get("password")
-        auth_header = request.headers.get('Authorization', None)
-       
-        token = auth_header.split(" ")[1]
-        decoded = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
-        user = decoded.get("sub")
+        
+        user = get_header_data(request.headers,'sub')
 
         bytes = password.encode("utf-8")
         hash = bcrypt.hash(bytes)
@@ -244,15 +249,25 @@ def create_app():
                     query = f"""
                     INSERT INTO {table_name} ({', '.join(columns)}) 
                     VALUES ({', '.join(['%s' for _ in columns])})
+                    RETURNING {'student_id' if table_name == 'student_info' else 'id' }
                     """
                     conn = create_conn()
                     cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
             # Execute batch insert
+                    user_id = get_header_data(request.headers, 'id')
+                    total_records= len(values)
+                    
                     for row in values:
                         cur.execute(query, row)
-                
-                    conn.commit()
 
+                        returned_id = cur.fetchone()['student_id' if table_name == 'student_info' else 'id']
+                        conn.commit()
+
+                        query_log = f"INSERT INTO logs(user_id, file_name, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, '{file_name}', 'uploaded', CURRENT_TIMESTAMP, '{table_name}', {returned_id}, {total_records}, 1, 0);"
+                        cur.execute(query_log)
+
+                        conn.commit()
+ 
                     cur.close()
                     conn.close()
             except psycopg2.Error as e:
@@ -312,10 +327,10 @@ def create_app():
         cur.execute(query_all)
         results = cur.fetchall()
 
-        cur.close()
-        conn.close()
-
         if len(results) >= 1:
+            user_id = get_header_data(request.headers, 'id')
+            total_records= len(results)
+            
             output = io.StringIO()
             writer = csv.writer(output)
 
@@ -327,7 +342,17 @@ def create_app():
                 else:
                     writer.writerow([row[field] for field in fields])
 
+                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'downloaded', CURRENT_TIMESTAMP, 'all', {row['student_id']}, {total_records}, 1, 0);"
+                    
+                cur.execute(query_log)
+
+                conn.commit()
+            
             output.seek(0)
+
+            cur.close()
+            conn.close()
+
             return send_file(
                 io.BytesIO(output.getvalue().encode("utf-8")),
                 mimetype="text/csv",
@@ -347,6 +372,8 @@ def create_app():
             if 'table_name' in data and 'id' in data:
                 id = data.get("id")
                 table = data.get("table_name")
+                
+                user_id = get_header_data(request.headers, 'id')
 
                 conn = create_conn()
                 cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
@@ -355,6 +382,11 @@ def create_app():
                 cur.execute(query)
                 conn.commit()
 
+                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, {table}, {id}, 1, 1, 0);"
+                    
+                cur.execute(query_log)
+                conn.commit()
+ 
                 cur.close()
                 conn.close()
                 
@@ -375,6 +407,8 @@ def create_app():
                 student_ids = data.get("student_id")
 
                 for student_id in student_ids:
+                    user_id = get_header_data(request.headers, 'id')
+
                     conn = create_conn()
                     cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
                     
@@ -382,6 +416,11 @@ def create_app():
                     cur.execute(query)
                     conn.commit()
 
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, 'student_info', {student_id}, 1, 1, 0);"
+                    
+                    cur.execute(query_log)
+                    conn.commit()
+    
                     cur.close()
                     conn.close()
                     
@@ -401,6 +440,7 @@ def create_app():
             id = data.get("id")
             student_id = data.get("student_id")
             source = data.get("source")
+            user_id = get_header_data(request.headers, 'id')
 
             # Map source to tables
             source_to_table = {
@@ -423,7 +463,15 @@ def create_app():
                 return '\'' if to_update[key] != '' else ''
 
             def value_or_null(key):
-                return to_update[key] if to_update[key] != '' else 'NULL'
+                value_returned = to_update[key]
+
+                if isinstance(to_update[key], list):
+                  value_returned = ';'.join(to_update[key])
+                
+                if to_update[key] == '' or to_update[key] is None:
+                  value_returned = 'NULL'
+
+                return value_returned
 
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
@@ -435,12 +483,28 @@ def create_app():
                     query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE id = {id};'
                     cur.execute(query)
                     conn.commit()
-
+                    
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, '{source_to_table[source]}', {id}, 1, 1, 0);"
+                    
+                    cur.execute(query_log)
+                    conn.commit()
+    
+                    cur.close()
+                    conn.close()
+                    
                     return jsonify({"message": f"The record was updated successfully."})
                 else:
                     query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE student_id = {student_id};'
                     cur.execute(query)
                     conn.commit()
+
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, '{source_to_table[source]}', {student_id}, 1, 1, 0);"
+                    
+                    cur.execute(query_log)
+                    conn.commit()
+    
+                    cur.close()
+                    conn.close()
 
                     return jsonify({"message": f"The record was created successfully."})
 
@@ -453,10 +517,15 @@ def create_app():
                 cur.execute(query)
                 conn.commit()
 
-                return jsonify({"message": f"The record was created successfully."})
+                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'created', CURRENT_TIMESTAMP, '{source_to_table[source]}', {student_id}, 1, 1, 0);"
+                    
+                cur.execute(query_log)
+                conn.commit()
+    
+                cur.close()
+                conn.close()
 
-            cur.close()
-            conn.close()
+                return jsonify({"message": f"The record was created successfully."})
 
     # ========== DISTRICT RECORD ENDPOINT ==========
     @app.route("/district_record", methods=["GET"])
@@ -474,6 +543,30 @@ def create_app():
         list_to_strung = ';'.join([r["district_name"] for r in res_list])
         return jsonify(list_to_strung)
 
+    # ========== LOGS ENDPOINT ==========
+    @app.route("/log", methods=["POST"])
+    @login_required(role_required=["administrator", "editor"])
+    def logs():
+        data = request.get_json() or {}
+        
+        if (data != {} and 'source' in data):
+            table = data.get("source")
+
+            conn = create_conn()
+            cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+            
+            query_data = f"SELECT l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id,  {'t.first_name' if table == 'student_info' else 's.first_name'} as first_name,  {'t.last_name' if table == 'student_info' else 's.last_name'} as last_name,  {'t.birth_date' if table == 'student_info' else 's.birth_date'} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{'student_id' if table == 'student_info' else 'id'} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'}"
+            
+            cur.execute(query_data)
+            result = cur.fetchall()
+
+            cur.close()
+            conn.close()
+        
+            return jsonify(result)
+
+        return jsonify({"error": "Missing params."})
+
     # ========== SCHOOL RECORD ENDPOINT ==========
     @app.route("/schools_per_district", methods=["POST"])
     @login_required(role_required=["administrator", "editor"])
@@ -488,14 +581,13 @@ def create_app():
 
             cur.execute("SELECT DISTINCT school_name FROM schools_districts WHERE district_name = %s;", (district,))
             result = cur.fetchall()
-        
+
             cur.close()
             conn.close()
 
             res_list = [dict(row) for row in result]
-            list_to_strung = ';'.join([r["school_name"] for r in res_list])
-            return jsonify(list_to_strung)
-
+            list_to_string = ';'.join([r["school_name"] for r in res_list])
+            return jsonify(list_to_string)
 
     # ========== STUDENT RECORD ENDPOINT ==========
     @app.route("/student_record_info", methods=["GET", "POST"])

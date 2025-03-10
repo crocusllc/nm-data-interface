@@ -4,7 +4,7 @@ import {Box, Button, Typography, TextField, IconButton} from "@mui/material";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import {useSystemMessage} from "@/app/utils/contexts/SystemMessage";
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
-import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 const FileUpload = ({FormConfig}) => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -64,7 +64,7 @@ const FileUpload = ({FormConfig}) => {
           fileInputRef.current.value = "";
         }
         showSystemMessage({
-          title:<><TaskAltIcon fontSize="large" /> Upload response</>,
+          title:<><InfoOutlinedIcon fontSize="large" /> Upload response</>,
           content: <p>{data.message}</p>,
         });
       }

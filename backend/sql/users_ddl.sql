@@ -9,7 +9,7 @@ CREATE TABLE users (
 );
 
 INSERT INTO users (
-   user_id,
+    user_id,
     username,
     password_hash,
     user_email,

@@ -108,7 +108,10 @@ export default function CategoryManager({displayData, formData, config, tableKey
                           </Stack>
                           <Stack spacing={2} key={i} direction={"row"} >
                             <Box className={"label"}>{ el['Data element label'] }: </Box>
-                            <Box className={"value"}>{displayData[el['CSV column name']]}</Box>
+                            <Box className={"value"}>{ el["multi-select"]
+                              ? displayData[el['CSV column name']]?.replaceAll(";", ", ")
+                              : displayData[el['CSV column name']]
+                            }</Box>
                           </Stack>
                         </Stack>
                       )

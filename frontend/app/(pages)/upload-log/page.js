@@ -1,9 +1,11 @@
 "use client"
-
 import Box from "@mui/material/Box";
 import {Tab, Tabs} from "@mui/material";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import { DataGrid } from "@mui/x-data-grid";
+import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
+import {useAuth} from "@/app/utils/contexts/AuthProvider";
+import DatasetTable from "@/app/components/DatasetTable/DatasetTable";
 
 function TabPanel(props) {
   const { children, value, index } = props;
@@ -21,34 +23,53 @@ function TabPanel(props) {
 }
 export default function UploadPage() {
   const [value, setValue] = useState(0);
+  const handleApiRequest = useHandleApiRequest();
+  const { userSession } = useAuth();
+
+  const [clinicalLogs, setClinicalLogs] = useState();
+  const [studentLogs, setStudentLogs] = useState();
+  const [programLogs, setProgramLogs] = useState();
+
+  const getLogs = async ({table, hook}) => {
+    return await handleApiRequest({
+      action: 'log',
+      method: 'POST',
+      session: userSession,
+      bodyObject: JSON.stringify({source: table})
+    }).then( res => {
+      if(res) {
+        hook(res)
+      }
+    });
+  }
+
+  // Fetch log by category.
+  useEffect(()=>{
+    if(userSession) {
+      !studentLogs && getLogs({table:"student_info", hook: setStudentLogs})
+      !clinicalLogs && getLogs({table:"clinical_placements", hook: setClinicalLogs})
+      !programLogs && getLogs({table:"program_info", hook: setProgramLogs})
+    }
+  },[userSession, studentLogs, clinicalLogs, programLogs])
+
+  const tableColumns = ({tableRow}) => {
+    const columnKeys = Object.keys(tableRow);
+    return columnKeys.map( key => ({
+      field: key,
+      header: key?.replace("_", " "),
+      filterEnabled: true,
+      renderCell: null,
+      sortable: true
+    }))
+  }
+
+
+
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
 
   const tabs= ["IHE Data", "Clinical Placement Data", "Program Student Data"];
-
-  const columns = [
-    { field: "file", headerName: "File", width: 150 },
-    { field: "uploadDate", headerName: "Upload Date", width: 150 },
-    { field: "recordStatus", headerName: "Record Status", width: 150 },
-    { field: "errorMessage", headerName: "Error Message", width: 200 },
-    { field: "studentId", headerName: "Student ID", width: 150 },
-    { field: "firstName", headerName: "First Name", width: 150 },
-    { field: "lastName", headerName: "Last Name", width: 150 },
-    { field: "birthDate", headerName: "Birthdate", width: 150 },
-  ];
-
-  const rows = [
-    { id: 1, file: "fall2024.csv", uploadDate: "09/14/2024", recordStatus: "Created", errorMessage: "", studentId: "22141423", firstName: "Solveig", lastName: "Hansen", birthDate: "3/3/2003" },
-    { id: 2, file: "fall2024.csv", uploadDate: "09/14/2024", recordStatus: "Updated", errorMessage: "", studentId: "22565634", firstName: "Talia", lastName: "Haines", birthDate: "4/4/2002" },
-    { id: 3, file: "fall2024.csv", uploadDate: "09/14/2024", recordStatus: "Created", errorMessage: "", studentId: "22777888", firstName: "Shoshana", lastName: "Painter", birthDate: "5/5/2005" },
-    { id: 4, file: "fall2024.csv", uploadDate: "09/14/2024", recordStatus: "Rejected", errorMessage: "Invalid Birth Date", studentId: "22372121", firstName: "Roisin", lastName: "Culhane", birthDate: "6/6/2003" },
-    { id: 5, file: "fall2024.csv", uploadDate: "09/14/2024", recordStatus: "Updated", errorMessage: "", studentId: "22987601", firstName: "Miles", lastName: "Hank", birthDate: "7/7/2001" },
-    { id: 6, file: "fall2024.csv", uploadDate: "09/14/2024", recordStatus: "Created", errorMessage: "", studentId: "22845784", firstName: "Dennis", lastName: "Berkery", birthDate: "8/8/2003" },
-    { id: 7, file: "fall2024.csv", uploadDate: "09/14/2024", recordStatus: "Updated", errorMessage: "", studentId: "22989402", firstName: "Elliot", lastName: "Hank", birthDate: "7/7/2001" },
-    { id: 8, file: "fall2024.csv", uploadDate: "09/14/2024", recordStatus: "Created", errorMessage: "", studentId: "22345648", firstName: "Jessa", lastName: "Way", birthDate: "10/2/2003" },
-    { id: 9, file: "fall2024.csv", uploadDate: "09/14/2024", recordStatus: "Created", errorMessage: "", studentId: "22190077", firstName: "Devon", lastName: "Dyreson", birthDate: "12/27/2002" },
-  ];
 
   return (
     <Box>
@@ -60,42 +81,27 @@ export default function UploadPage() {
           }
         </Tabs>
       </Box>
-      <TabPanel value={value} index={0}>
-        <div style={{ height: 400, width: "100%" }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            pageSize={5}
-            rowsPerPageOptions={[5]}
-            checkboxSelection={false}
-            disableSelectionOnClick
-          />
-        </div>
-      </TabPanel>
-      <TabPanel value={value} index={1}>
-        <div style={{ height: 400, width: "100%" }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            pageSize={5}
-            rowsPerPageOptions={[5]}
-            checkboxSelection={false}
-            disableSelectionOnClick
-          />
-        </div>
-      </TabPanel>
-      <TabPanel value={value} index={2}>
-        <div style={{ height: 400, width: "100%" }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            pageSize={5}
-            rowsPerPageOptions={[5]}
-            checkboxSelection={false}
-            disableSelectionOnClick
-          />
-        </div>
-      </TabPanel>
+      {
+        studentLogs && (
+          <TabPanel value={value} index={0}>
+            <DatasetTable rowsData={studentLogs} columnsData={tableColumns({tableRow: studentLogs[0]})}/>
+          </TabPanel>
+        )
+      }
+      {
+        clinicalLogs && (
+          <TabPanel value={value} index={1}>
+            <DatasetTable rowsData={clinicalLogs} columnsData={tableColumns({tableRow: clinicalLogs[0]})}/>
+          </TabPanel>
+        )
+      }
+      {
+        programLogs && (
+          <TabPanel value={value} index={2}>
+            <DatasetTable rowsData={programLogs} columnsData={tableColumns({tableRow: programLogs[0]})}/>
+          </TabPanel>
+        )
+      }
     </Box>
   )
 }
