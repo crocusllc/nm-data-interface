@@ -317,6 +317,7 @@ def create_app():
             conditions = ' AND '.join([f'lower({key}) like lower(\'%{fields_not_date[key]}%\')' for key in fields_not_date])
 
             query_all = f'SELECT * FROM student_info s JOIN clinical_placements c ON s.student_id=c.student_id JOIN program_info p ON s.student_id=p.student_id WHERE {conditions} {start_date} {end_date} {exit_date};'
+            query_all = query_all.replace("  ", " ")
             query_all = query_all.replace("WHERE AND", "WHERE")
         else:
             query_all = f'SELECT * FROM student_info s JOIN clinical_placements c ON s.student_id=c.student_id JOIN program_info p ON s.student_id=p.student_id;'
