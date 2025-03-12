@@ -338,10 +338,7 @@ def create_app():
             writer.writerow(results[0].keys())            
 
             for row in results:
-                if fields == ["*"]:
-                    writer.writerow([row[field] for field in results[0].keys()])
-                else:
-                    writer.writerow([row[field] for field in fields])
+                writer.writerow([row[field] for field in results[0].keys()])
 
                 query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'downloaded', CURRENT_TIMESTAMP, 'all', {row['student_id']}, {total_records}, 1, 0);"
                     
