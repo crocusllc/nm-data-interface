@@ -42,7 +42,7 @@ fields:
         CSV column name: "licensure_program_requirements_met_on_entry" #name used in the CSV and DB
         Type: select
         Validation required: false
-        Dropdown or validation values: "Yes,No"
+        Dropdown or validation values: "Yes;No"
         multi-select: false
         Required field: false
         Include in bulk upload: true
@@ -178,7 +178,7 @@ fields:
         CSV column name: registered_apprentice
         Type: select
         Validation required: false
-        Dropdown or validation values: 'Yes,No'
+        Dropdown or validation values: 'Yes;No'
         multi-select: false
         Required field: true
         Include in bulk upload?: true
@@ -200,6 +200,7 @@ fields:
         Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
+        Required field on Download page: true
         Include in download file: true
       field-12:
         Category: 'clinical_placements'
@@ -215,6 +216,7 @@ fields:
         Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
+        Required field on Download page: true
         Include in download file: true
       field-13:
         Category: 'clinical_placements'
@@ -223,7 +225,7 @@ fields:
         CSV column name: placement_alignment
         Type: select
         Validation required: true
-        Dropdown or validation values: 'Yes,No'
+        Dropdown or validation values: 'Yes;No'
         multi-select: false
         Required field: true
         Include in bulk upload?: true
