@@ -21,6 +21,7 @@ export default function DownloadDataPage() {
 
   studentRecordKeys.forEach( el => {
     if(studentRecordFormFields[el]['Use as filter on Download page?']){
+      studentRecordFormFields[el]['Required field'] = studentRecordFormFields[el]['Required field on Download page'] ?? false;
       downLoadFormFields.push(studentRecordFormFields[el])
     }
   });
