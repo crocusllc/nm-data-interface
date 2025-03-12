@@ -317,6 +317,7 @@ def create_app():
             conditions = ' AND '.join([f'lower({key}) like lower(\'%{fields_not_date[key]}%\')' for key in fields_not_date])
 
             query_all = f'SELECT * FROM student_info s JOIN clinical_placements c ON s.student_id=c.student_id JOIN program_info p ON s.student_id=p.student_id WHERE {conditions} {start_date} {end_date} {exit_date};'
+            query_all = query_all.replace("  ", " ")
             query_all = query_all.replace("WHERE AND", "WHERE")
         else:
             query_all = f'SELECT * FROM student_info s JOIN clinical_placements c ON s.student_id=c.student_id JOIN program_info p ON s.student_id=p.student_id;'
@@ -337,10 +338,7 @@ def create_app():
             writer.writerow(results[0].keys())            
 
             for row in results:
-                if fields == ["*"]:
-                    writer.writerow([row[field] for field in results[0].keys()])
-                else:
-                    writer.writerow([row[field] for field in fields])
+                writer.writerow([row[field] for field in results[0].keys()])
 
                 query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'downloaded', CURRENT_TIMESTAMP, 'all', {row['student_id']}, {total_records}, 1, 0);"
                     
