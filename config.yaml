@@ -368,7 +368,7 @@ fields:
         Validation required: false
         Dropdown or validation values: "N/A"
         multi-select: false
-        Required field: false
+        Required field: true
         Include in bulk upload?: true
         Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
@@ -398,7 +398,7 @@ fields:
         Validation required: false
         Dropdown or validation values: "N/A"
         multi-select: false
-        Required field: true
+        Required field: false
         Include in bulk upload?: true
         Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
