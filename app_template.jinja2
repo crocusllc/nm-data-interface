@@ -553,7 +553,7 @@ def create_app():
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
             
-            query_data = f"SELECT l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id,  {'t.first_name' if table == 'student_info' else 's.first_name'} as first_name,  {'t.last_name' if table == 'student_info' else 's.last_name'} as last_name,  {'t.birth_date' if table == 'student_info' else 's.birth_date'} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{'student_id' if table == 'student_info' else 'id'} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'}"
+            query_data = f"SELECT l.source_table, l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id,  {'t.first_name' if table == 'student_info' else 's.first_name'} as first_name,  {'t.last_name' if table == 'student_info' else 's.last_name'} as last_name, {'t.birth_date' if table == 'student_info' else 's.birth_date'} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{'student_id' if table == 'student_info' else 'id'} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'} WHERE l.source_table='{table}'"
             
             cur.execute(query_data)
             result = cur.fetchall()
