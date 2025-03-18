@@ -37,7 +37,7 @@ export default function UploadPage() {
       bodyObject: JSON.stringify({source: table})
     }).then( res => {
       if(res) {
-        hook(res?.filter( el => el.source_table === table))
+        hook(res)
       }
     });
   }
