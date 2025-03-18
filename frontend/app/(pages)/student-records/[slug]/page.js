@@ -1,6 +1,6 @@
 "use client"
 import Box from '@mui/material/Box';
-import { useParams } from "next/navigation";
+import {notFound, useParams, useRouter} from "next/navigation";
 import {useEffect, useState} from "react";
 import CategoryManager from "@/app/(pages)/student-records/[slug]/CategoryManager";
 import Stack from '@mui/material/Stack';
@@ -13,6 +13,7 @@ export default function StudentRecordPage() {
   const params = useParams();
   const handleApiRequest = useHandleApiRequest();
   const slug = params.slug;
+  const router = useRouter();
 
   const [studentRecordData, setStudentRecordData] = useState();
   const [loadData, setLoadData] = useState(true);
@@ -28,8 +29,10 @@ export default function StudentRecordPage() {
         session: userSession,
         bodyObject: JSON.stringify({student_id: slug})
       }).then(data => {
-        if(data) {
+        if(data.student_info && data.clinical_placements && data.program_info) {
           setStudentRecordData(data);
+        } else {
+          router.push("/404");
         }
       })
     }
@@ -78,7 +81,7 @@ export default function StudentRecordPage() {
                     )
                   }
                   {
-                    studentRecordData[catKey === "additional_student_info" ? "program_info" : catKey].map( (item, i) => {
+                    studentRecordData[catKey === "additional_student_info" ? "program_info" : catKey]?.map( (item, i) => {
                       const isMultiple = studentRecordData[catKey === "additional_student_info" ? "program_info" : catKey].length > 1;
                       return (
                         <Stack key={i} sx={{ border: `${ isMultiple ? "1px solid #ccc" : "none" }`, borderRadius: "4px", position:"relative", padding:`${ isMultiple ? "10px" : 0 }` }}>

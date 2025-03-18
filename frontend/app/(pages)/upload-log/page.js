@@ -2,7 +2,6 @@
 import Box from "@mui/material/Box";
 import {Tab, Tabs} from "@mui/material";
 import {useEffect, useState} from "react";
-import { DataGrid } from "@mui/x-data-grid";
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import DatasetTable from "@/app/components/DatasetTable/DatasetTable";
@@ -38,7 +37,7 @@ export default function UploadPage() {
       bodyObject: JSON.stringify({source: table})
     }).then( res => {
       if(res) {
-        hook(res)
+        hook(res?.filter( el => el.source_table === table))
       }
     });
   }
@@ -69,7 +68,7 @@ export default function UploadPage() {
     setValue(newValue);
   };
 
-  const tabs= ["IHE Data", "Clinical Placement Data", "Program Student Data"];
+  const tabs= ["Student IHE Data", "Clinical Placement Data", "Program and Student Data"];
 
   return (
     <Box>
