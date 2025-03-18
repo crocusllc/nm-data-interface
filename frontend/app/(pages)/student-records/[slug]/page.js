@@ -1,6 +1,6 @@
 "use client"
 import Box from '@mui/material/Box';
-import {notFound, useParams, useRouter} from "next/navigation";
+import {useParams, useRouter} from "next/navigation";
 import {useEffect, useState} from "react";
 import CategoryManager from "@/app/(pages)/student-records/[slug]/CategoryManager";
 import Stack from '@mui/material/Stack';
