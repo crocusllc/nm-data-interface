@@ -37,7 +37,17 @@ export default function UploadPage() {
       bodyObject: JSON.stringify({source: table})
     }).then( res => {
       if(res) {
-        hook(res)
+        // Ordering the elements.
+        hook(res.map((item) => ({
+          file_name: item.file_name,
+          upload_date: item.upload_date,
+          record_status: item.record_status,
+          error_message: item.error_message,
+          student_id: item.student_id,
+          first_name: item.first_name,
+          last_name: item.last_name,
+          birth_date: item.birth_date,
+        })))
       }
     });
   }
@@ -71,7 +81,7 @@ export default function UploadPage() {
   const tabs= ["Student IHE Data", "Clinical Placement Data", "Program and Student Data"];
 
   return (
-    <Box>
+    <Box sx={{"& table th": {textTransform: "capitalize"}}}>
       <h1>Upload Log</h1>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
