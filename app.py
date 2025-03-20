@@ -246,17 +246,20 @@ def create_app():
                     values = [[row[col] for col in columns] for row in rows_to_insert]
             
             # Build INSERT query dynamically
-                    query = f"""
-                    INSERT INTO {table_name} ({', '.join(columns)}) 
-                    VALUES ({', '.join(['%s' for _ in columns])})
-                    RETURNING {'student_id' if table_name == 'student_info' else 'id' }
-                    """
                     conn = create_conn()
                     cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
-            # Execute batch insert
+
                     user_id = get_header_data(request.headers, 'id')
                     total_records= len(values)
-                    
+
+                    query = f"""
+                        INSERT INTO {table_name} ({', '.join(columns)}) 
+                        VALUES ({', '.join(['%s' for _ in columns])})
+                        ON CONFLICT ({'student_id' if table_name == 'student_info' else 'id' }) DO UPDATE
+                        SET {', '.join("{} = EXCLUDED. {}".format(key, key) for key in columns)}
+                        RETURNING {'student_id' if table_name == 'student_info' else 'id' }
+                        """
+
                     for row in values:
                         cur.execute(query, row)
 
@@ -267,7 +270,7 @@ def create_app():
                         cur.execute(query_log)
 
                         conn.commit()
- 
+
                     cur.close()
                     conn.close()
             except psycopg2.Error as e:

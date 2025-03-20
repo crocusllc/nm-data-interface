@@ -246,17 +246,20 @@ def create_app():
                     values = [[row[col] for col in columns] for row in rows_to_insert]
             
             # Build INSERT query dynamically
-                    query = f"""
-                    INSERT INTO {table_name} ({', '.join(columns)}) 
-                    VALUES ({', '.join(['%s' for _ in columns])})
-                    RETURNING {'student_id' if table_name == 'student_info' else 'id' }
-                    """
                     conn = create_conn()
                     cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
-            # Execute batch insert
+
                     user_id = get_header_data(request.headers, 'id')
                     total_records= len(values)
-                    
+
+                    query = f"""
+                        INSERT INTO {table_name} ({', '.join(columns)}) 
+                        VALUES ({', '.join(['%s' for _ in columns])})
+                        ON CONFLICT ({'student_id' if table_name == 'student_info' else 'id' }) DO UPDATE
+                        SET {', '.join("{} = EXCLUDED. {}".format(key, key) for key in columns)}
+                        RETURNING {'student_id' if table_name == 'student_info' else 'id' }
+                        """
+
                     for row in values:
                         cur.execute(query, row)
 
@@ -553,7 +556,7 @@ def create_app():
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
             
-            query_data = f"SELECT l.source_table, l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id,  {'t.first_name' if table == 'student_info' else 's.first_name'} as first_name,  {'t.last_name' if table == 'student_info' else 's.last_name'} as last_name, {'t.birth_date' if table == 'student_info' else 's.birth_date'} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{'student_id' if table == 'student_info' else 'id'} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'} WHERE l.source_table='{table}'"
+            query_data = f"SELECT l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id,  {'t.first_name' if table == 'student_info' else 's.first_name'} as first_name,  {'t.last_name' if table == 'student_info' else 's.last_name'} as last_name,  {'t.birth_date' if table == 'student_info' else 's.birth_date'} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{'student_id' if table == 'student_info' else 'id'} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'}"
             
             cur.execute(query_data)
             result = cur.fetchall()
