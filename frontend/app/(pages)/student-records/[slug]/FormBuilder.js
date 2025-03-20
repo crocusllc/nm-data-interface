@@ -23,8 +23,9 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
     onSubmit(formData);
   };
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setGlobalValue(prev => ({...prev, [field]: value}));
+    const filteredValue = Array.isArray(value) ? value.filter(v => v !== '') : value;
+    setFormData((prev) => ({ ...prev, [field]: filteredValue }));
+    setGlobalValue(prev => ({...prev, [field]: filteredValue}));
   };
 
   const handleDelete = (e) => {
