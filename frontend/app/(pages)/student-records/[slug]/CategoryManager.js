@@ -90,24 +90,23 @@ export default function CategoryManager({displayData, formData, config, tableKey
                 )
               }
               {
+                (config?.editable && userSession && userSession.user.role !== 'viewer' && !addable) && (
+                  <Stack direction="row" spacing={1} sx={{position: "absolute", right:"6px", top:"4px"}}>
+                    <IconButton aria-label="edit" onClick={()=> setEditMode(true)}>
+                      <EditIcon />
+                    </IconButton>
+                  </Stack>
+                )
+              }
+              {
                 displayData && (
                   (formData)?.map( (el, i) => {
                     const fieldDef = Object.keys(displayData).filter( field => el['CSV column name'] === field)[0];
                     if(fieldDef) {
                       return(
                         <Stack spacing={1} key={i}>
-
-                          <Stack direction="row" spacing={1} sx={{position: "absolute", right:"6px", top:"4px"}}>
-                            {
-                              (config?.editable && userSession && userSession.user.role !== 'viewer') && (
-                                <IconButton aria-label="edit" onClick={()=> setEditMode(true)}>
-                                  <EditIcon />
-                                </IconButton>
-                              )
-                            }
-                          </Stack>
-                          <Stack spacing={2} key={i} direction={"row"} >
-                            <Box className={"label"}>{ el['Data element label'] }: </Box>
+                          <Stack spacing={2} key={i} direction={{ xs: 'column', sm: 'row' }}>
+                            <Box sx={{fontWeight: "bold", maxWidth:{sm: "48%"}}} className={"label"}>{ el['Data element label'] }: </Box>
                             <Box className={"value"}>{ el["multi-select"]
                               ? displayData[el['CSV column name']]?.replaceAll(";", ", ")
                               : displayData[el['CSV column name']]

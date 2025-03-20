@@ -13,8 +13,8 @@ function TabPanel(props) {
     <div
       role="tabpanel"
       hidden={value !== index}
-      id={`upload-data-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
+      id={`log-data-tabpanel-${index}`}
+      aria-labelledby={`log-tab-${index}`}
     >
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
@@ -72,8 +72,6 @@ export default function UploadPage() {
     }))
   }
 
-
-
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
@@ -84,33 +82,34 @@ export default function UploadPage() {
     <Box sx={{"& table th": {textTransform: "capitalize"}}}>
       <h1>Upload Log</h1>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
+        <Tabs value={value} onChange={handleChange} aria-label="logs by category">
           {
-            tabs.map( (tab, i) => <Tab label={tab} key={i}/>)
+            tabs.map( (tab, i) => <Tab label={tab} key={i} id={`log-tab-${i}`}/>)
           }
         </Tabs>
       </Box>
-      {
-        studentLogs && (
-          <TabPanel value={value} index={0}>
-            <DatasetTable rowsData={studentLogs} columnsData={tableColumns({tableRow: studentLogs[0]})}/>
-          </TabPanel>
-        )
-      }
-      {
-        clinicalLogs && (
-          <TabPanel value={value} index={1}>
-            <DatasetTable rowsData={clinicalLogs} columnsData={tableColumns({tableRow: clinicalLogs[0]})}/>
-          </TabPanel>
-        )
-      }
-      {
-        programLogs && (
-          <TabPanel value={value} index={2}>
-            <DatasetTable rowsData={programLogs} columnsData={tableColumns({tableRow: programLogs[0]})}/>
-          </TabPanel>
-        )
-      }
+      <TabPanel value={value} index={0}>
+        {
+          studentLogs?.length
+            ? <DatasetTable rowsData={studentLogs} columnsData={tableColumns({tableRow: studentLogs[0]})}/>
+            : <Box sx={{color: "gray", textAlign:"center", padding:"20px"}}> No data to display </Box>
+        }
+      </TabPanel>
+      <TabPanel value={value} index={1}>
+        {
+          clinicalLogs?.length
+            ? <DatasetTable rowsData={clinicalLogs} columnsData={tableColumns({tableRow: clinicalLogs[0]})}/>
+            : <Box sx={{color: "gray", textAlign:"center",  padding:"20px"}}> No data to display </Box>
+        }
+
+      </TabPanel>
+      <TabPanel value={value} index={2}>
+        {
+          programLogs?.length
+            ? <DatasetTable rowsData={programLogs} columnsData={tableColumns({tableRow: programLogs[0]})}/>
+            : <Box sx={{color: "gray", textAlign:"center",  padding:"20px"}}> No data to display </Box>
+        }
+      </TabPanel>
     </Box>
   )
 }

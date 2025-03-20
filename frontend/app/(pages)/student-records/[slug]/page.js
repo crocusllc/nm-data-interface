@@ -70,6 +70,7 @@ export default function StudentRecordPage() {
         {
           studentRecordData &&
             Object.keys(categories).filter(cat => cat !== "global").map( catKey => {
+              const categoryData = studentRecordData[catKey === "additional_student_info" ? "program_info" : catKey];
               return (
                 <Stack spacing={2} key={catKey} sx={{padding: "16px", border: "1px solid #ccc", borderRadius: "4px",  position: "relative"}}>
                   <Box component={"h2"} sx={{marginBottom: "10px"}}>
@@ -81,7 +82,12 @@ export default function StudentRecordPage() {
                     )
                   }
                   {
-                    studentRecordData[catKey === "additional_student_info" ? "program_info" : catKey]?.map( (item, i) => {
+                    (!categoryData?.length && categories[catKey]?.editable && !categories[catKey]?.addable) && (
+                      <CategoryManager formData={formCategories[catKey]} config={categories[catKey]} tableKey={catKey} studentId={slug} onFetch={()=>setLoadData(true)} />
+                    )
+                  }
+                  {
+                    categoryData?.map( (item, i) => {
                       const isMultiple = studentRecordData[catKey === "additional_student_info" ? "program_info" : catKey].length > 1;
                       return (
                         <Stack key={i} sx={{ border: `${ isMultiple ? "1px solid #ccc" : "none" }`, borderRadius: "4px", position:"relative", padding:`${ isMultiple ? "10px" : 0 }` }}>
