@@ -104,7 +104,7 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
                   label={field['Data element label']}
                   value={formData?.[field['CSV column name']] === '' ? null : dayjs(formData?.[field['CSV column name']]) }
                   onChange={(date) => handleChange(field['CSV column name'], dayjs(date).format('YYYY-MM-DD'))}
-                  format="YYYY-MM-DD"
+                  format="MM/DD/YYYY"
                   slotProps={{ textField: { required: field["Required field"]}}}
                 />
               </LocalizationProvider>
