@@ -7,6 +7,7 @@ import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
 import {GlobalValuesProvider} from "@/app/utils/contexts/GobalValues";
+import {dateFormat} from "@/app/utils/globalFunctions";
 
 export default function CategoryManager({displayData, formData, config, tableKey, studentId, onFetch, addable}) {
   const { userSession } = useAuth();
@@ -103,13 +104,14 @@ export default function CategoryManager({displayData, formData, config, tableKey
                   (formData)?.map( (el, i) => {
                     const fieldDef = Object.keys(displayData).filter( field => el['CSV column name'] === field)[0];
                     if(fieldDef) {
+                      const fieldValue = el["Type"] === "date" ? dateFormat(displayData[el['CSV column name']]) : displayData[el['CSV column name']];
                       return(
                         <Stack spacing={1} key={i}>
                           <Stack spacing={2} key={i} direction={{ xs: 'column', sm: 'row' }}>
                             <Box sx={{fontWeight: "bold", maxWidth:{sm: "48%"}}} className={"label"}>{ el['Data element label'] }: </Box>
                             <Box className={"value"}>{ el["multi-select"]
-                              ? displayData[el['CSV column name']]?.replaceAll(";", ", ")
-                              : displayData[el['CSV column name']]
+                              ? fieldValue?.replaceAll(";", ", ")
+                              : fieldValue
                             }</Box>
                           </Stack>
                         </Stack>
