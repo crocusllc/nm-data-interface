@@ -21,3 +21,20 @@ export function passValidation(pass) {
   })
   return validationErrors;
 }
+
+/**
+ * Add the required formt to dates.
+ * 
+ * @param dateStr
+ * @returns {string}
+ */
+export function dateFormat(dateStr) {
+  if (!dateStr) return ""; // Handle empty/null/undefined inputs
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", {
+    year: "2-digit",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
