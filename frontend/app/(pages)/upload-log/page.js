@@ -5,6 +5,7 @@ import {useEffect, useState} from "react";
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import DatasetTable from "@/app/components/DatasetTable/DatasetTable";
+import {dateFormat} from "@/app/utils/globalFunctions";
 
 function TabPanel(props) {
   const { children, value, index } = props;
@@ -40,13 +41,13 @@ export default function UploadPage() {
         // Ordering the elements.
         hook(res.map((item) => ({
           file_name: item.file_name,
-          upload_date: item.upload_date,
+          upload_date: dateFormat(item.upload_date),
           record_status: item.record_status,
           error_message: item.error_message,
           student_id: item.student_id,
           first_name: item.first_name,
           last_name: item.last_name,
-          birth_date: item.birth_date,
+          birth_date: dateFormat(item.birth_date),
         })))
       }
     });
