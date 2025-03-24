@@ -174,8 +174,8 @@ def main():
     )
     parser.add_argument(
         "--mode",
-        choices=["app", "csv", "db"],
-        help="Choose the mode of operation: app, csv, or db"
+        choices=["app", "csv", "db", "key"],
+        help="Choose the mode of operation: app, csv, key, or db"
     )
     parser.add_argument(
         "--output",
