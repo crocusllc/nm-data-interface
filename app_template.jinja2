@@ -9,7 +9,16 @@ import psycopg2.extras
 from flask import Flask, request, jsonify, send_file, current_app
 from flask_cors import CORS
 from passlib.hash import bcrypt
+from cryptography.fernet import Fernet
 from functools import wraps
+
+def load_key():
+    return open("/app/secret.key", "rb").read()
+
+def encrypt_text(plain_text, key):
+    fernet = Fernet(key)
+    encrypted_text = fernet.encrypt(plain_text.encode())
+    return encrypted_text.decode()
 
 def is_json(str):
   try:
@@ -123,7 +132,6 @@ def create_app():
 
         return jsonify({"token": token, "id": user['user_id'], "username": user['username'], "role": user['user_role'], "new_password": user['new_password']})
 
-
     # ========== DELETE USER ENDPOINT ==========
     @app.route("/delete_user", methods=["POST"])
     @login_required(role_required=["administrator"])
@@ -208,6 +216,8 @@ def create_app():
     @app.route("/file_upload", methods=["POST"])
     @login_required(role_required=["administrator"])
     def file_upload():
+        key = load_key()
+
         data = request.get_data()
         json_str = data.decode('utf-8')
         json_objs = json_str.split('\n')
@@ -243,7 +253,7 @@ def create_app():
                 if rows_to_insert:
             # Extract column names
                     columns = list(rows_to_insert[0].keys())
-                    values = [[row[col] for col in columns] for row in rows_to_insert]
+                    values = [[encrypt_text(row[col], key) if isinstance(row[col], str) and col != 'student_id' and col != id  and 'date' not in col else row[col] for col in columns] for row in rows_to_insert]
             
             # Build INSERT query dynamically
                     conn = create_conn()
@@ -594,6 +604,9 @@ def create_app():
     @app.route("/student_record_info", methods=["GET", "POST"])
     @login_required(role_required=["administrator", "editor", "viewer"])
     def student_record():
+        key = load_key()
+        f = Fernet(key)
+
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
@@ -630,6 +643,11 @@ def create_app():
             cur.execute("SELECT * from student_info;")
             result = cur.fetchall()
         
+            for row in result:
+                for column in row:
+                    if isinstance(row[column], str) and column != 'student_id' and column != id and 'date' not in column:
+                        row[column] = f.decrypt(row[column].encode()).decode()
+
             return jsonify(result)
 
         cur.close()

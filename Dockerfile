@@ -28,6 +28,7 @@ RUN mkdir -p /tmp/sql/
 RUN mkdir -p /tmp/csv/ 
 # Execute commands
 
+RUN cd /tmp && python3 read_config.py --mode key --config config.yaml --template app_template.jinja2 --output app.py
 RUN cd /tmp && python3 read_config.py --mode app --config config.yaml --template app_template.jinja2 --output app.py
 RUN cd /tmp && python3 read_config.py --mode db --config config.yaml --template app_template.jinja2 --output app.py
 RUN cd /tmp && python3 read_config.py --mode csv --config config.yaml --template app_template.jinja2 --output app.py
