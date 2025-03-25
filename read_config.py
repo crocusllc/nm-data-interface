@@ -129,7 +129,7 @@ def create_sql_files(fields):
     type_mapping = {
         "text": "TEXT",
         "select": "TEXT",  # Assuming options are stored as text
-        "date": "DATE",
+        "date": "TEXT",
         "integer": "INTEGER",
         "boolean": "BOOLEAN"
     }

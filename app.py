@@ -253,7 +253,7 @@ def create_app():
                 if rows_to_insert:
             # Extract column names
                     columns = list(rows_to_insert[0].keys())
-                    values = [[encrypt_text(row[col], key) if isinstance(row[col], str) and col != 'student_id' and col != id  and 'date' not in col else row[col] for col in columns] for row in rows_to_insert]
+                    values = [[encrypt_text(row[col], key) if isinstance(row[col], str) and col != 'student_id' and col != 'id' else row[col] for col in columns] for row in rows_to_insert]
             
             # Build INSERT query dynamically
                     conn = create_conn()
@@ -292,6 +292,8 @@ def create_app():
     @app.route("/file_download", methods=["POST"])
     @login_required(role_required=["administrator"])
     def file_download():
+        key = load_key()
+        f = Fernet(key)
         data = request.get_json() or {}
         file_name = data.get("file_name")
         fields = data.get("fields", [])
@@ -340,6 +342,11 @@ def create_app():
 
         cur.execute(query_all)
         results = cur.fetchall()
+
+        for row in results:
+            for column in row:
+                if isinstance(row[column], str) and column != 'student_id' and column != 'id':
+                    row[column] = f.decrypt(row[column].encode()).decode()        
 
         if len(results) >= 1:
             user_id = get_header_data(request.headers, 'id')
@@ -445,7 +452,7 @@ def create_app():
     @app.route("/update_data", methods=["POST"])
     @login_required(role_required=["administrator", "editor"])
     def update_record():
-        key = load_key()
+        fernet_key = load_key()
         data = request.get_json() or {}
 
         if (data != {}):
@@ -474,11 +481,11 @@ def create_app():
             def with_values(key):
                 return '\'' if to_update[key] != '' else ''
 
-            def value_or_null(key):
-                value_returned = encrypt_text(to_update[key],key)
+            def value_or_null(key, fernet_key):
+                value_returned = encrypt_text(to_update[key], fernet_key)
 
                 if isinstance(to_update[key], list):
-                  value_returned = ';'.join(encrypt_text(to_update[key],key))
+                  value_returned = ';'.join(encrypt_text(to_update[key], fernet_key))
                 
                 if to_update[key] == '' or to_update[key] is None:
                   value_returned = 'NULL'
@@ -489,7 +496,7 @@ def create_app():
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
             if id is not None and student_id is not None:
-                set_values = ', '.join(f'{key} = {with_values(key)}{value_or_null(key)}{with_values(key)}' for key in to_update)
+                set_values = ', '.join(f'{key} = {with_values(key)}{value_or_null(key, fernet_key)}{with_values(key)}' for key in to_update)
 
                 if source_to_table[source] != 'student_info':
                     query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE id = {id};'
@@ -522,7 +529,7 @@ def create_app():
 
             if id is None:
                 columns = ', '.join([f'{key}' for key in to_update])
-                values = ', '.join([f'{with_values(key)}{value_or_null(key)}{with_values(key)}' for key in to_update])
+                values = ', '.join([f'{with_values(key)}{value_or_null(key, fernet_key)}{with_values(key)}' for key in to_update])
 
                 query = f'INSERT INTO {source_to_table[source]}(student_id, {columns}) VALUES ({student_id},{values});'
 
@@ -559,6 +566,9 @@ def create_app():
     @app.route("/log", methods=["POST"])
     @login_required(role_required=["administrator", "editor"])
     def logs():
+        key = load_key()
+        f = Fernet(key)
+
         data = request.get_json() or {}
         
         if (data != {} and 'source' in data):
@@ -571,6 +581,11 @@ def create_app():
             
             cur.execute(query_data)
             result = cur.fetchall()
+
+            for row in result:
+                row['first_name'] = f.decrypt(row['first_name'].encode()).decode()
+                row['last_name'] = f.decrypt(row['last_name'].encode()).decode()
+                row['birth_date'] = f.decrypt(row['birth_date'].encode()).decode()
 
             cur.close()
             conn.close()
@@ -623,10 +638,9 @@ def create_app():
                 if result is not None:
                     result_student = result
 
-                    for row in result_student:
-                        for column in row:
-                            if isinstance(row[column], str) and column != 'student_id' and column != id and 'date' not in column:
-                                row[column] = f.decrypt(row[column].encode()).decode()
+                    for column in result_student:
+                        if isinstance(result_student[column], str) and column != 'student_id' and column != 'id':
+                            result_student[column] = f.decrypt(result_student[column].encode()).decode()
 
                     page_result = {}
                     page_result['student_info'] = [result_student]
@@ -636,7 +650,7 @@ def create_app():
 
                     for row in result_program:
                         for column in row:
-                            if isinstance(row[column], str) and column != 'student_id' and column != id and 'date' not in column:
+                            if isinstance(row[column], str) and column != 'student_id' and column != 'id':
                                 row[column] = f.decrypt(row[column].encode()).decode()
 
                     page_result['program_info'] = result_program
@@ -646,7 +660,7 @@ def create_app():
 
                     for row in result_clinical:
                         for column in row:
-                            if isinstance(row[column], str) and column != 'student_id' and column != id and 'date' not in column:
+                            if isinstance(row[column], str) and column != 'student_id' and column != 'id':
                                 row[column] = f.decrypt(row[column].encode()).decode()
 
                     page_result['clinical_placements'] = result_clinical
@@ -661,7 +675,7 @@ def create_app():
         
             for row in result:
                 for column in row:
-                    if isinstance(row[column], str) and column != 'student_id' and column != id and 'date' not in column:
+                    if isinstance(row[column], str) and column != 'student_id' and column != 'id':
                         row[column] = f.decrypt(row[column].encode()).decode()
 
             return jsonify(result)
