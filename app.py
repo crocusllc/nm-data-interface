@@ -445,6 +445,7 @@ def create_app():
     @app.route("/update_data", methods=["POST"])
     @login_required(role_required=["administrator", "editor"])
     def update_record():
+        key = load_key()
         data = request.get_json() or {}
 
         if (data != {}):
@@ -474,10 +475,10 @@ def create_app():
                 return '\'' if to_update[key] != '' else ''
 
             def value_or_null(key):
-                value_returned = to_update[key]
+                value_returned = encrypt_text(to_update[key],key)
 
                 if isinstance(to_update[key], list):
-                  value_returned = ';'.join(to_update[key])
+                  value_returned = ';'.join(encrypt_text(to_update[key],key))
                 
                 if to_update[key] == '' or to_update[key] is None:
                   value_returned = 'NULL'
@@ -622,16 +623,31 @@ def create_app():
                 if result is not None:
                     result_student = result
 
+                    for row in result_student:
+                        for column in row:
+                            if isinstance(row[column], str) and column != 'student_id' and column != id and 'date' not in column:
+                                row[column] = f.decrypt(row[column].encode()).decode()
+
                     page_result = {}
                     page_result['student_info'] = [result_student]
 
                     cur.execute("SELECT * from program_info where student_id=%s;", (student_id,))
                     result_program = cur.fetchall()
 
+                    for row in result_program:
+                        for column in row:
+                            if isinstance(row[column], str) and column != 'student_id' and column != id and 'date' not in column:
+                                row[column] = f.decrypt(row[column].encode()).decode()
+
                     page_result['program_info'] = result_program
 
                     cur.execute("SELECT * from clinical_placements where student_id=%s;", (student_id,))
                     result_clinical = cur.fetchall()
+
+                    for row in result_clinical:
+                        for column in row:
+                            if isinstance(row[column], str) and column != 'student_id' and column != id and 'date' not in column:
+                                row[column] = f.decrypt(row[column].encode()).decode()
 
                     page_result['clinical_placements'] = result_clinical
 
