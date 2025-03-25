@@ -34,6 +34,7 @@ services:
       - ./app_template.jinja2:/tmp/app_template.jinja2
       - ./frontend/public/docs:/tmp/csv
       - ./backend/sql:/tmp/sql
+      - ./secret.key:/app/secret.key
     ports:
       - 5432:5432
       - 3030:5000

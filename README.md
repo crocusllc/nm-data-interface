@@ -133,6 +133,8 @@ The config.yaml file defines the application's behavior and structure. Modifying
 To update the app.py execute:
 
 ```
+    docker compose exec api python3 /tmp/read_config.py --mode key --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
+
     docker compose exec api python3 /tmp/read_config.py --mode app --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
 ```
 

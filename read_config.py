@@ -8,6 +8,12 @@ import os
 import subprocess
 from cryptography.fernet import Fernet
 
+# Function to create the secret key
+def write_key():
+    key = Fernet.generate_key()
+    with open("/app/secret.key", "wb") as key_file:
+        key_file.write(key)
+
 def parse_yaml(config_path):
     """Load and parse the given YAML, returning a dict of required info."""
     with open(config_path, "r") as f:
@@ -59,7 +65,6 @@ def parse_config_for_csv(config_path):
             pass
     return field_list
             
-
 # Function to create CSV files
 def create_csv(fields):
     student_headers = []
@@ -124,7 +129,7 @@ def create_sql_files(fields):
     type_mapping = {
         "text": "TEXT",
         "select": "TEXT",  # Assuming options are stored as text
-        "date": "DATE",
+        "date": "TEXT",
         "integer": "INTEGER",
         "boolean": "BOOLEAN"
     }
@@ -169,8 +174,8 @@ def main():
     )
     parser.add_argument(
         "--mode",
-        choices=["app", "csv", "db"],
-        help="Choose the mode of operation: app, csv, or db"
+        choices=["app", "csv", "db", "key"],
+        help="Choose the mode of operation: app, csv, key, or db"
     )
     parser.add_argument(
         "--output",
@@ -181,11 +186,15 @@ def main():
     if args.mode == 'csv': 
         fields = parse_config_for_csv(args.config)
         create_csv(fields)
+    elif args.mode == 'key':
+        # Create the encryption key
+        write_key()
+        print(f"Generated encryption key.")
     elif args.mode == 'db':
         # Create the student table
         fields = parse_config_for_db(args.config)
         create_sql_files(fields)
-    elif args.mode == 'app':    
+    elif args.mode == 'app':
         # 1. Parse the config
         config_data = parse_config(args.config)
 
