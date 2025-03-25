@@ -108,8 +108,8 @@ export default function CategoryManager({displayData, formData, config, tableKey
                       return(
                         <Stack spacing={1} key={i}>
                           <Stack spacing={2} key={i} direction={{ xs: 'column', sm: 'row' }}>
-                            <Box sx={{fontWeight: "bold", maxWidth:{sm: "48%"}}} className={"label"}>{ el['Data element label'] }: </Box>
-                            <Box className={"value"}>{ el["multi-select"]
+                            <Box sx={{fontWeight: "bold", maxWidth:{sm: "52%"}}} className={"label"}>{ el['Data element label'] }: </Box>
+                            <Box sx={{marginTop: "0 !important"}}className={"value"}>{ el["multi-select"]
                               ? fieldValue?.replaceAll(";", ", ")
                               : fieldValue
                             }</Box>
