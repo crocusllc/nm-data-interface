@@ -127,9 +127,9 @@ def create_sql_files(fields):
 
     # Define basic type mapping from YAML types to SQL types
     type_mapping = {
-        "text": "TEXT",
-        "select": "TEXT",  # Assuming options are stored as text
-        "date": "TEXT",
+        "text": "BYTEA",
+        "select": "BYTEA",  # Assuming options are stored as text
+        "date": "BYTEA",
         "integer": "INTEGER",
         "boolean": "BOOLEAN"
     }
@@ -137,7 +137,7 @@ def create_sql_files(fields):
     # Group fields into tables
     for column_name, category, field_type in fields:
         table_name = category_to_table.get(category)
-        sql_type = type_mapping.get(field_type, "TEXT")  # Default to TEXT if unknown
+        sql_type = type_mapping.get(field_type, "BYTEA")  # Default to BYTEA if unknown
         if table_name:
             tables[table_name].append(f"{column_name} {sql_type}")
 

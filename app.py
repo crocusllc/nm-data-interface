@@ -9,16 +9,15 @@ import psycopg2.extras
 from flask import Flask, request, jsonify, send_file, current_app
 from flask_cors import CORS
 from passlib.hash import bcrypt
-from cryptography.fernet import Fernet
 from functools import wraps
+import base64
+
+def key_to_text(key_binary):
+    return base64.urlsafe_b64encode(key_binary).decode()
 
 def load_key():
-    return open("/app/secret.key", "rb").read()
-
-def encrypt_text(plain_text, key):
-    fernet = Fernet(key)
-    encrypted_text = fernet.encrypt(plain_text.encode())
-    return encrypted_text.decode()
+    key = open("/app/secret.key", "rb").read()
+    return key_to_text(key)
 
 def is_json(str):
   try:
@@ -216,7 +215,7 @@ def create_app():
     @app.route("/file_upload", methods=["POST"])
     @login_required(role_required=["administrator"])
     def file_upload():
-        key = load_key()
+        key_encrypt = load_key()
 
         data = request.get_data()
         json_str = data.decode('utf-8')
@@ -253,7 +252,7 @@ def create_app():
                 if rows_to_insert:
             # Extract column names
                     columns = list(rows_to_insert[0].keys())
-                    values = [[encrypt_text(row[col], key) if isinstance(row[col], str) and col != 'student_id' and col != 'id' else row[col] for col in columns] for row in rows_to_insert]
+                    values = [[row[col] if isinstance(row[col], str) and col != 'student_id' and col != 'id' else row[col] for col in columns] for row in rows_to_insert]
             
             # Build INSERT query dynamically
                     conn = create_conn()
@@ -262,13 +261,15 @@ def create_app():
                     user_id = get_header_data(request.headers, 'id')
                     total_records= len(values)
 
+                    no_encrypt = {'student_id', 'id'}
+
                     query = f"""
                         INSERT INTO {table_name} ({', '.join(columns)}) 
-                        VALUES ({', '.join(['%s' for _ in columns])})
+                        VALUES ({', '.join([ '%s' if no_encrypt.issuperset([col]) else f"PGP_SYM_ENCRYPT(%s, '{key_encrypt}'::text)::bytea" for col in columns])})
                         ON CONFLICT ({'student_id' if table_name == 'student_info' else 'id' }) DO UPDATE
-                        SET {', '.join("{} = EXCLUDED. {}".format(key, key) for key in columns)}
+                        SET {', '.join(f"{key} = EXCLUDED.{key}" for key in columns)}
                         RETURNING {'student_id' if table_name == 'student_info' else 'id' }
-                        """
+                    """
 
                     for row in values:
                         cur.execute(query, row)
@@ -292,8 +293,8 @@ def create_app():
     @app.route("/file_download", methods=["POST"])
     @login_required(role_required=["administrator"])
     def file_download():
-        key = load_key()
-        f = Fernet(key)
+        key_encrypt = load_key()
+
         data = request.get_json() or {}
         file_name = data.get("file_name")
         fields = data.get("fields", [])
@@ -331,39 +332,46 @@ def create_app():
 
             conditions = ' AND '.join([f'lower({key}) like lower(\'%{fields_not_date[key]}%\')' for key in fields_not_date])
 
-            query_all = f'SELECT * FROM student_info s JOIN clinical_placements c ON s.student_id=c.student_id JOIN program_info p ON s.student_id=p.student_id WHERE {conditions} {start_date} {end_date} {exit_date};'
+            query_all = f'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id WHERE {conditions} {start_date} {end_date} {exit_date};'
             query_all = query_all.replace("  ", " ")
             query_all = query_all.replace("WHERE AND", "WHERE")
         else:
-            query_all = f'SELECT * FROM student_info s JOIN clinical_placements c ON s.student_id=c.student_id JOIN program_info p ON s.student_id=p.student_id;'
+            query_all = f'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id;'
 
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
         cur.execute(query_all)
-        results = cur.fetchall()
+        results = cur.fetchone()
 
-        for row in results:
-            for column in row:
-                if isinstance(row[column], str) and column != 'student_id' and column != 'id':
-                    row[column] = f.decrypt(row[column].encode()).decode()        
+        columns = results.keys()
+        decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'id' and column != 'student_id' else "ignore" for column in columns)
 
-        if len(results) >= 1:
+        decrypted_columns = decrypted_columns.replace("ignore,", "")
+        base_query = query_all.replace("*", f"s.student_id, c.id as clinical_id, p.id as program_id, {decrypted_columns}")
+
+        cur.execute(base_query)
+
+        result_decrypt = cur.fetchall()
+
+        if len(result_decrypt) >= 1:
             user_id = get_header_data(request.headers, 'id')
-            total_records= len(results)
+            total_records= len(result_decrypt)
             
             output = io.StringIO()
             writer = csv.writer(output)
 
-            writer.writerow(results[0].keys())            
+            writer.writerow(result_decrypt[0].keys())            
 
-            for row in results:
-                writer.writerow([row[field] for field in results[0].keys()])
+            for row in result_decrypt:
+                writer.writerow([row[field] for field in result_decrypt[0].keys()])
+
+                if row['student_id'] is None:
+                    row['student_id'] = 'all'
 
                 query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'downloaded', CURRENT_TIMESTAMP, 'all', {row['student_id']}, {total_records}, 1, 0);"
                     
                 cur.execute(query_log)
-
                 conn.commit()
             
             output.seek(0)
@@ -481,14 +489,15 @@ def create_app():
             def with_values(key):
                 return '\'' if to_update[key] != '' else ''
 
-            def value_or_null(key, fernet_key):
-                value_returned = encrypt_text(to_update[key], fernet_key)
+            def value_or_null(key):
+                value_returned = f"PGP_SYM_ENCRYPT({to_update[key]}, fernet_key)"
 
                 if isinstance(to_update[key], list):
-                  value_returned = ';'.join(encrypt_text(to_update[key], fernet_key))
+                    value_returned = ';'.join(to_update[key])
+                    value_returned = f"PGP_SYM_ENCRYPT({value_returned}, fernet_key)"
                 
                 if to_update[key] == '' or to_update[key] is None:
-                  value_returned = 'NULL'
+                    value_returned = 'NULL'
 
                 return value_returned
 
@@ -496,7 +505,7 @@ def create_app():
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
             if id is not None and student_id is not None:
-                set_values = ', '.join(f'{key} = {with_values(key)}{value_or_null(key, fernet_key)}{with_values(key)}' for key in to_update)
+                set_values = ', '.join(f'{key} = {with_values(key)}{value_or_null(key)}{with_values(key)}' for key in to_update)
 
                 if source_to_table[source] != 'student_info':
                     query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE id = {id};'
@@ -566,9 +575,7 @@ def create_app():
     @app.route("/log", methods=["POST"])
     @login_required(role_required=["administrator", "editor"])
     def logs():
-        key = load_key()
-        f = Fernet(key)
-
+        key_encrypt = load_key()
         data = request.get_json() or {}
         
         if (data != {} and 'source' in data):
@@ -576,16 +583,17 @@ def create_app():
 
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
-            
-            query_data = f"SELECT l.source_table,l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id,  {'t.first_name' if table == 'student_info' else 's.first_name'} as first_name,  {'t.last_name' if table == 'student_info' else 's.last_name'} as last_name,  {'t.birth_date' if table == 'student_info' else 's.birth_date'} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{'student_id' if table == 'student_info' else 'id'} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'} WHERE l.source_table='{table}'"
+
+            def encrypt_based_column(key_encrypt, column, table):
+                if table == 'student_info':
+                    return f"PGP_SYM_DECRYPT(t.{column}, '{key_encrypt}')" 
+                    
+                return f"PGP_SYM_DECRYPT(s.{column}, '{key_encrypt}')"
+
+            query_data = f"SELECT l.source_table,l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id, {encrypt_based_column(key_encrypt, 'first_name', table)} as first_name, {encrypt_based_column(key_encrypt, 'last_name', table)} as last_name, {encrypt_based_column(key_encrypt, 'birth_date', table)} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{'student_id' if table == 'student_info' else 'id'} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'} WHERE l.source_table='{table}'"
             
             cur.execute(query_data)
             result = cur.fetchall()
-
-            for row in result:
-                row['first_name'] = f.decrypt(row['first_name'].encode()).decode()
-                row['last_name'] = f.decrypt(row['last_name'].encode()).decode()
-                row['birth_date'] = f.decrypt(row['birth_date'].encode()).decode()
 
             cur.close()
             conn.close()
@@ -620,8 +628,7 @@ def create_app():
     @app.route("/student_record_info", methods=["GET", "POST"])
     @login_required(role_required=["administrator", "editor", "viewer"])
     def student_record():
-        key = load_key()
-        f = Fernet(key)
+        key_encrypt = load_key()
 
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
@@ -636,32 +643,43 @@ def create_app():
                 result = cur.fetchone()
 
                 if result is not None:
-                    result_student = result
+                    columns = result.keys()
+                    decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'student_id' else f"{column}" for column in columns)
 
-                    for column in result_student:
-                        if isinstance(result_student[column], str) and column != 'student_id' and column != 'id':
-                            result_student[column] = f.decrypt(result_student[column].encode()).decode()
+                    cur.execute(f"SELECT {decrypted_columns} from student_info where student_id=%s;", (student_id,))
+
+                    result_student = cur.fetchone()
 
                     page_result = {}
                     page_result['student_info'] = [result_student]
 
                     cur.execute("SELECT * from program_info where student_id=%s;", (student_id,))
-                    result_program = cur.fetchall()
+                    program = cur.fetchone()
 
-                    for row in result_program:
-                        for column in row:
-                            if isinstance(row[column], str) and column != 'student_id' and column != 'id':
-                                row[column] = f.decrypt(row[column].encode()).decode()
+                    if program is not None:
+                        columns_program = program.keys()
+                        decrypted_columns_program = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'id' and column != 'student_id' else f"{column}" for column in columns_program)
+
+                        cur.execute(f"SELECT {decrypted_columns_program} from program_info where student_id=%s;", (student_id,))
+
+                        result_program = cur.fetchall()
+                    else:
+                        result_program = []
 
                     page_result['program_info'] = result_program
 
                     cur.execute("SELECT * from clinical_placements where student_id=%s;", (student_id,))
-                    result_clinical = cur.fetchall()
+                    clinical = cur.fetchone()
 
-                    for row in result_clinical:
-                        for column in row:
-                            if isinstance(row[column], str) and column != 'student_id' and column != 'id':
-                                row[column] = f.decrypt(row[column].encode()).decode()
+                    if clinical is not None:
+                        columns_clinical = clinical.keys()
+                        decrypted_columns_clinical = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'id' and column != 'student_id' else f"{column}" for column in columns_clinical)
+
+                        cur.execute(f"SELECT {decrypted_columns_clinical} from clinical_placements where student_id=%s;", (student_id,))
+
+                        result_clinical = cur.fetchall()
+                    else:
+                        result_clinical = []
 
                     page_result['clinical_placements'] = result_clinical
 
@@ -671,12 +689,14 @@ def create_app():
 
         if request.method == 'GET':
             cur.execute("SELECT * from student_info;")
+            columns_query = cur.fetchone()
+            
+            columns = columns_query.keys()
+
+            decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'student_id' else f"{column}" for column in columns)
+
+            cur.execute(f"SELECT {decrypted_columns} from student_info;")
             result = cur.fetchall()
-        
-            for row in result:
-                for column in row:
-                    if isinstance(row[column], str) and column != 'student_id' and column != 'id':
-                        row[column] = f.decrypt(row[column].encode()).decode()
 
             return jsonify(result)
 
