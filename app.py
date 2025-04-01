@@ -489,13 +489,13 @@ def create_app():
             def with_values(key):
                 return '\'' if to_update[key] != '' else ''
 
-            def value_or_null(key):
-                value_returned = f"PGP_SYM_ENCRYPT({to_update[key]}, fernet_key)"
+            def value_or_null(key, fernet_key):
+                value_returned = f"PGP_SYM_ENCRYPT({with_values(key)}{to_update[key]}{with_values(key)}, '{fernet_key}'::text)::bytea"
 
                 if isinstance(to_update[key], list):
                     value_returned = ';'.join(to_update[key])
-                    value_returned = f"PGP_SYM_ENCRYPT({value_returned}, fernet_key)"
-                
+                    value_returned = f"PGP_SYM_ENCRYPT({with_values(key)}{value_returned}{with_values(key)}, '{fernet_key}'::text)::bytea"
+  
                 if to_update[key] == '' or to_update[key] is None:
                     value_returned = 'NULL'
 
@@ -505,7 +505,7 @@ def create_app():
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
             if id is not None and student_id is not None:
-                set_values = ', '.join(f'{key} = {with_values(key)}{value_or_null(key)}{with_values(key)}' for key in to_update)
+                set_values = ', '.join(f'{key} = {value_or_null(key, fernet_key)}' for key in to_update)
 
                 if source_to_table[source] != 'student_info':
                     query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE id = {id};'
@@ -538,7 +538,7 @@ def create_app():
 
             if id is None:
                 columns = ', '.join([f'{key}' for key in to_update])
-                values = ', '.join([f'{with_values(key)}{value_or_null(key, fernet_key)}{with_values(key)}' for key in to_update])
+                values = ', '.join([f'{value_or_null(key, fernet_key)}' for key in to_update])
 
                 query = f'INSERT INTO {source_to_table[source]}(student_id, {columns}) VALUES ({student_id},{values});'
 

@@ -28,7 +28,6 @@ RUN mkdir -p /tmp/sql/
 RUN mkdir -p /tmp/csv/ 
 # Execute commands
 
-RUN cd /tmp && python3 read_config.py --mode key --config config.yaml --template app_template.jinja2 --output app.py
 RUN cd /tmp && python3 read_config.py --mode app --config config.yaml --template app_template.jinja2 --output app.py
 RUN cd /tmp && python3 read_config.py --mode db --config config.yaml --template app_template.jinja2 --output app.py
 RUN cd /tmp && python3 read_config.py --mode csv --config config.yaml --template app_template.jinja2 --output app.py
@@ -40,6 +39,7 @@ RUN mkdir /scripts/
 RUN cp /tmp/sql/student_info.sql /scripts/student_info.sql
 RUN cp /tmp/sql/clinical_placements.sql /scripts/clinical_placements.sql
 RUN cp /tmp/sql/program_info.sql /scripts/program_info.sql
+RUN cp /tmp/sql/type_columns.sql /scripts/type_columns.sql
 
 # Copy your application code into /app
 WORKDIR /app
@@ -81,7 +81,8 @@ RUN /usr/lib/postgresql/15/bin/pg_ctl \
 && psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/schools_districts.sql \
 && psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/clinical_placements.sql \
 && psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/student_info.sql \
-&& psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/program_info.sql
+&& psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/program_info.sql \
+&& psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/type_columns.sql
 
 # Switch back to root so supervisor can manage processes
 USER root

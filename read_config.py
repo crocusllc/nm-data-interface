@@ -134,12 +134,26 @@ def create_sql_files(fields):
         "boolean": "BOOLEAN"
     }
 
+    type_mapping_decrypted = {
+        "text": "TEXT",
+        "select": "TEXT",  # Assuming options are stored as text
+        "date": "DATE",
+        "integer": "INTEGER",
+        "boolean": "BOOLEAN"
+    }
+
+    query_types = ""
     # Group fields into tables
     for column_name, category, field_type in fields:
         table_name = category_to_table.get(category)
         sql_type = type_mapping.get(field_type, "BYTEA")  # Default to BYTEA if unknown
         if table_name:
             tables[table_name].append(f"{column_name} {sql_type}")
+
+        sql_type_decrypted = type_mapping_decrypted.get(field_type, "TEXT")  # Default to BYTEA if unknown
+        if table_name:
+            query_table = f"INSERT INTO column_type(source_table, column_name, data_type) VALUES ('{table_name}', '{column_name}', '{sql_type_decrypted}'); "
+            query_types = query_types + query_table
 
     # Generate SQL scripts
     sql_statements = {}
@@ -155,6 +169,11 @@ def create_sql_files(fields):
         with open(f"/tmp/sql/{file_name}", "w") as f:
             f.write(sql)
         print(f"Generated {file_name}")
+
+    file_name = f"type_columns.sql"
+    with open(f"/tmp/sql/{file_name}", "w") as f:
+        f.write(f"{query_types}.sql")
+        print(f"Generated type columns")
 
     return sql_statements       
 
