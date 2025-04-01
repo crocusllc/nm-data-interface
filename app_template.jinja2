@@ -313,33 +313,33 @@ def create_app():
         end_date = ''
         exit_date = ''
 
+        conn = create_conn()
+        cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+
         if query_fields != "*":
             for key in fields:
                 if "date" in key:
                     fields_not_date.pop(key, None)
 
-                    if "start" in key and fields[key] != '':
-                        start_date = f'AND {key} >= \'{fields[key]}\'::date '
+                    if "start" in key and fields[key] != '':                        
+                        start_date = f"AND PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date >= '{fields[key]}'::date "
 
                     if "end" in key and fields[key] != '':
-                        end_date = f'AND {key} <= \'{fields[key]}\'::date '
+                        end_date = f"AND PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date <= '{fields[key]}'::date "
 
                     if "exit" in key and fields[key] != '':
-                        exit_date = f'AND {key} <= \'{fields[key]}\'::date '
+                        exit_date = f"AND PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date <= '{fields[key]}'::date "
 
                 if fields[key] == '':
                     fields_not_date.pop(key, None)
 
-            conditions = ' AND '.join([f'lower({key}) like lower(\'%{fields_not_date[key]}%\')' for key in fields_not_date])
+            conditions = " AND ".join([f"lower(PGP_SYM_DECRYPT({key}, '{key_encrypt}'::text)) like lower('%{fields_not_date[key]}%')" for key in fields_not_date])
 
             query_all = f'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id WHERE {conditions} {start_date} {end_date} {exit_date};'
             query_all = query_all.replace("  ", " ")
             query_all = query_all.replace("WHERE AND", "WHERE")
         else:
             query_all = f'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id;'
-
-        conn = create_conn()
-        cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
         cur.execute(query_all)
         results = cur.fetchone()
