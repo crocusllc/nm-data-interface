@@ -408,7 +408,7 @@ def create_app():
                 cur.execute(query)
                 conn.commit()
 
-                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, {table}, {id}, 1, 1, 0);"
+                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, '{table}', {id}, 1, 1, 0);"
                     
                 cur.execute(query_log)
                 conn.commit()
