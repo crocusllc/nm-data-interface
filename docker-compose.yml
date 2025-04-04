@@ -49,6 +49,7 @@ services:
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./frontend/.env:/app/.env
+      - ./frontend/public/docs:/app/docs
     networks:
       - internal
 
