@@ -23,6 +23,14 @@ COPY app_template.jinja2 /tmp/app_template.jinja2
 COPY docker-compose.yml /tmp/docker-compose.yml
 COPY supervisord.conf /tmp/supervisord.conf
 
+# Entrypoint setup
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Default command (optional, can be overridden by docker-compose)
+CMD ["python3", "main.py"]
+
 RUN mkdir /app
 RUN mkdir -p /tmp/sql/
 RUN mkdir -p /tmp/csv/ 
@@ -30,7 +38,7 @@ RUN mkdir -p /tmp/csv/
 
 RUN cd /tmp && python3 read_config.py --mode app --config config.yaml --template app_template.jinja2 --output app.py
 RUN cd /tmp && python3 read_config.py --mode db --config config.yaml --template app_template.jinja2 --output app.py
-RUN cd /tmp && python3 read_config.py --mode csv --config config.yaml --template app_template.jinja2 --output app.py
+#RUN cd /tmp && python3 read_config.py --mode csv --config config.yaml --template app_template.jinja2 --output app.py
 
 RUN mv /tmp/app.py /app/app.py
 
