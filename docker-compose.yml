@@ -30,6 +30,7 @@ services:
         PG_HOST: localhost
         SECRET_KEY: SUPER_SECRET
     volumes:
+      - ./config.yaml:/app/config.yaml
       - ./app.py:/app/app.py
       - ./app_template.jinja2:/tmp/app_template.jinja2
       - ./frontend/public/docs:/tmp/csv
@@ -49,6 +50,7 @@ services:
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./frontend/.env:/app/.env
+      - ./frontend/public/docs:/app/public/docs
     networks:
       - internal
 

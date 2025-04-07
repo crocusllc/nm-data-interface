@@ -17,7 +17,7 @@ import {ListItemButton} from "@mui/material";
 const templatePaths = [
   {
     name: "IHE Data Template",
-    path: "/docs/additional_program_student_data.csv"
+    path: "/docs/student_data.csv",
   },
   {
     name: "Clinical Placement Data Template",
@@ -25,7 +25,7 @@ const templatePaths = [
   },
   {
     name: "Program and Student Data Template",
-    path: "/docs/student_data.csv"
+    path: "/docs/additional_program_student_data.csv"
   },
   {
     name: "Reference Guide",
