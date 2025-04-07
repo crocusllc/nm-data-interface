@@ -144,7 +144,7 @@ def create_app():
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
             if id is not None:
-                query = f'DELETE FROM users WHERE id = {id};'
+                query = f'DELETE FROM users WHERE user_id = {id};'
                 
                 cur.execute(query)
                 conn.commit()
