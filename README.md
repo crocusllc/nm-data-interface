@@ -182,6 +182,31 @@ To deploy the aplication to a custom domain.
 
 Caddy automatically handles HTTPS because you've provided a domain name.
 
+## Creating and Deleting users
+
+To create a user, use the following cURL call:
+
+```
+curl -X POST <YOUR_API_URL>/create_user -H 'Authorization: Bearer <YOUR_USER_TOKEN>'
+     -H "Content-Type: application/json"      -d '{
+                                   "username": "<NEW_USER_NAME>",
+                                   "password": "<NEW_USER_PASSWORD>",
+                                   "user_email":"<NEW_USER_EMAIL>",
+                                   "user_role": "<editor|admin|viewer>"
+                                 }'
+
+```
+
+To delete a user, user the following call:
+
+```
+curl -X POST <YOUR_API_URL>/delete_user -H 'Authorization: Bearer <YOUR_USER_TOKEN>'
+     -H "Content-Type: application/json"      -d '{
+                                   "id": <USER_ID>,
+                                 }'
+
+```
+
 ## Contributing
 
 Contributions are welcome! Please fork the repository and create a pull request
