@@ -8,6 +8,7 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
 import {GlobalValuesProvider} from "@/app/utils/contexts/GobalValues";
 import {dateFormat} from "@/app/utils/globalFunctions";
+import Chip from '@mui/material/Chip';
 
 export default function CategoryManager({displayData, formData, config, tableKey, studentId, onFetch, addable}) {
   const { userSession } = useAuth();
@@ -100,6 +101,13 @@ export default function CategoryManager({displayData, formData, config, tableKey
                 )
               }
               {
+                (displayData && tableKey !== "student_info") && (
+                  <Stack direction="row" spacing={1} sx={{marginBottom: "8px"}}>
+                    <Chip label={`Element Id: ${displayData?.id}`} />
+                  </Stack>
+                )
+              }
+              {
                 displayData && (
                   (formData)?.map( (el, i) => {
                     const fieldDef = Object.keys(displayData).filter( field => el['CSV column name'] === field)[0];
@@ -109,7 +117,7 @@ export default function CategoryManager({displayData, formData, config, tableKey
                         <Stack spacing={1} key={i}>
                           <Stack spacing={2} key={i} direction={{ xs: 'column', sm: 'row' }}>
                             <Box sx={{fontWeight: "bold", maxWidth:{sm: "52%"}}} className={"label"}>{ el['Data element label'] }: </Box>
-                            <Box sx={{marginTop: "0 !important"}}className={"value"}>{ el["multi-select"]
+                            <Box sx={{marginTop: "0 !important"}} className={"value"}>{ el["multi-select"]
                               ? fieldValue?.replaceAll(";", ", ")
                               : fieldValue
                             }</Box>
