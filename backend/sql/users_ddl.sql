@@ -63,6 +63,9 @@ INSERT INTO users (
 );
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+SELECT setval(pg_get_serial_sequence('users', 'user_id'), (SELECT MAX(user_id) FROM users));
+
 --ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 --ALTER TABLE clinical_placements ENABLE ROW LEVEL SECURITY;
 
