@@ -184,6 +184,25 @@ Caddy automatically handles HTTPS because you've provided a domain name.
 
 ## Creating and Deleting users
 
+Where the user token comes in the response from calling the `/login` endpoint in the API, or it can be extracted 
+from the browser:
+- Right click
+- Inspect
+- Network
+- Headers
+- Token 
+
+Or you can make the following cURL call:
+
+```
+curl -X POST <YOUR_API_URL>/login -H "Content-Type: application/json"
+    -d '{
+            "username": "<USER_NAME>",
+            "password": "<USER_PASSWORD>"
+        }'
+```
+
+
 To create a user, use the following cURL call:
 
 ```
