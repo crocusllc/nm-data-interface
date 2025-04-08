@@ -41,10 +41,19 @@ services:
       - 3030:5000
     networks:
       - internal
+    healthcheck:
+      test: [ "CMD-SHELL", "test -f /tmp/csv/clinical_placement_data.csv && test -f /tmp/csv/additional_program_student_data.csv && test -f /tmp/csv/student_data.csv" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
   app:
     build: 
       context: ./
       dockerfile: ./frontend/Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+        restart: true
     ports:
       - 3000:3000
     volumes:
