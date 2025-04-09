@@ -353,10 +353,10 @@ def create_app():
         results = cur.fetchone()
 
         columns = results.keys()
-        decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'id' and column != 'student_id' else "ignore" for column in columns)
+        decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'clinical_id' and column != 'program_id' and column != 'student_id' else "ignore" for column in columns)
 
         decrypted_columns = decrypted_columns.replace("ignore,", "")
-        base_query = query_all.replace("*", f"s.student_id, c.id as clinical_id, p.id as program_id, {decrypted_columns}")
+        base_query = query_all.replace("*", f"s.student_id, c.clinical_id, p.program_id, {decrypted_columns}")
 
         cur.execute(base_query)
 
