@@ -269,7 +269,7 @@ def create_app():
                         base_id = "clinical_id"
 
                     if table_name == 'program_info':
-                        base_id = "program_id"
+                        base_id = "student_id"
 
                     query = f"""
                         INSERT INTO {table_name} ({', '.join(columns)}) 
