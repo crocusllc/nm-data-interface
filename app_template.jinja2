@@ -722,14 +722,17 @@ def create_app():
             cur.execute("SELECT * from student_info;")
             columns_query = cur.fetchone()
             
-            columns = columns_query.keys()
+            if columns_query is not None:
+                columns = columns_query.keys()
 
-            decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'student_id' else f"{column}" for column in columns)
+                decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'student_id' else f"{column}" for column in columns)
 
-            cur.execute(f"SELECT {decrypted_columns} from student_info;")
-            result = cur.fetchall()
+                cur.execute(f"SELECT {decrypted_columns} from student_info;")
+                result = cur.fetchall()
 
-            return jsonify(result)
+                return jsonify(result)            
+            else:
+                return jsonify([])
 
         cur.close()
         conn.close()
