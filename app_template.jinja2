@@ -138,13 +138,13 @@ def create_app():
         data = request.get_json() or {}
 
         if (data != {}):
-            id = data.get("id")
+            username = data.get("username")
             
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
             if id is not None:
-                query = f'DELETE FROM users WHERE user_id = {id};'
+                query = f'DELETE FROM users WHERE username = {username};'
                 
                 cur.execute(query)
                 conn.commit()
@@ -185,7 +185,7 @@ def create_app():
         cur.close()
         conn.close()
 
-        return jsonify({"message": "The user was created successfully with ID {returned_id}!"})
+        return jsonify(f{"message": "The user was created successfully with ID {returned_id}!"})
 
     # ========== CHANGE PASSWORD ENDPOINT ==========
     @app.route("/change_password", methods=["POST"])
@@ -507,7 +507,7 @@ def create_app():
             def value_or_null(key, fernet_key):
                 value_returned = f"PGP_SYM_ENCRYPT({with_values(key)}{to_update[key]}{with_values(key)}, '{fernet_key}'::text)::bytea"
 
-                if key == 'clinical_id' or key == 'program_id':
+                if key == 'clinical_id' or key == 'student_id':
                     value_returned = f"{with_values(key)}{to_update[key]}{with_values(key)}"    
 
                 if isinstance(to_update[key], list):
@@ -544,7 +544,7 @@ def create_app():
                     query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE clinical_id = {id};'
 
                 if source_to_table[source] == 'program_info':
-                    query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE program_id = {id};'
+                    query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE student_id = {id};'
 
                 cur.execute(query)
                 conn.commit()
@@ -619,7 +619,7 @@ def create_app():
                 base_id = "clinical_id"
 
             if table == 'program_info':
-                base_id = "program_id"
+                base_id = "student_id"
             
             query_data = f"SELECT l.source_table, l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id, {encrypt_based_column(key_encrypt, 'first_name', table)} as first_name, {encrypt_based_column(key_encrypt, 'last_name', table)} as last_name, {encrypt_based_column(key_encrypt, 'birth_date', table)} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{base_id} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'} WHERE l.source_table='{table}'"
             

@@ -34,8 +34,8 @@ export default function CategoryManager({displayData, formData, config, tableKey
       postData['clinical_id'] = displayData.clinical_id;
     }
 
-    if(displayData?.program_id) {
-      postData['program_id'] = displayData.program_id;
+    if(displayData?.student_id) {
+      postData['student_id'] = displayData.student_id;
     }
 
     // Executing Create/Update record.
@@ -114,7 +114,7 @@ export default function CategoryManager({displayData, formData, config, tableKey
               {
                 (displayData && tableKey == "program_info") && (
                   <Stack direction="row" spacing={1} sx={{marginBottom: "8px"}}>
-                    <Chip label={`Element Id: ${displayData?.program_id}`} />
+                    <Chip label={`Element Id: ${displayData?.student_id}`} />
                   </Stack>
                 )
               }
