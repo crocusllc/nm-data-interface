@@ -185,7 +185,9 @@ def create_app():
         cur.close()
         conn.close()
 
-        return jsonify(f{"message": "The user was created successfully with ID {returned_id}!"})
+        message = f"The user was created successfully with ID {returned_id}!"
+
+        return jsonify({"message": message })
 
     # ========== CHANGE PASSWORD ENDPOINT ==========
     @app.route("/change_password", methods=["POST"])
