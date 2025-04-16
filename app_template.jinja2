@@ -354,47 +354,48 @@ def create_app():
         cur.execute(query_all)
         results = cur.fetchone()
 
-        columns = results.keys()
-        decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'clinical_id' and column != 'program_id' and column != 'student_id' else "ignore" for column in columns)
+        if results is not None:
+            columns = results.keys()
+            decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'clinical_id' and column != 'program_id' and column != 'student_id' else "ignore" for column in columns)
 
-        decrypted_columns = decrypted_columns.replace("ignore,", "")
-        base_query = query_all.replace("*", f"s.student_id, c.clinical_id, {decrypted_columns}")
+            decrypted_columns = decrypted_columns.replace("ignore,", "")
+            base_query = query_all.replace("*", f"s.student_id, c.clinical_id, {decrypted_columns}")
 
-        cur.execute(base_query)
+            cur.execute(base_query)
 
-        result_decrypt = cur.fetchall()
+            result_decrypt = cur.fetchall()
 
-        if len(result_decrypt) >= 1:
-            user_id = get_header_data(request.headers, 'id')
-            total_records= len(result_decrypt)
-            
-            output = io.StringIO()
-            writer = csv.writer(output)
+            if len(result_decrypt) >= 1:
+                user_id = get_header_data(request.headers, 'id')
+                total_records= len(result_decrypt)
+                
+                output = io.StringIO()
+                writer = csv.writer(output)
 
-            writer.writerow(result_decrypt[0].keys())            
+                writer.writerow(result_decrypt[0].keys())            
 
-            for row in result_decrypt:
-                writer.writerow([row[field] for field in result_decrypt[0].keys()])
+                for row in result_decrypt:
+                    writer.writerow([row[field] for field in result_decrypt[0].keys()])
 
-                if row['student_id'] is None:
-                    row['student_id'] = 'all'
+                    if row['student_id'] is None:
+                        row['student_id'] = 'all'
 
-                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'downloaded', CURRENT_TIMESTAMP, 'all', {row['student_id']}, {total_records}, 1, 0);"
-                    
-                cur.execute(query_log)
-                conn.commit()
-            
-            output.seek(0)
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'downloaded', CURRENT_TIMESTAMP, 'all', {row['student_id']}, {total_records}, 1, 0);"
+                        
+                    cur.execute(query_log)
+                    conn.commit()
+                
+                output.seek(0)
 
-            cur.close()
-            conn.close()
+                cur.close()
+                conn.close()
 
-            return send_file(
-                io.BytesIO(output.getvalue().encode("utf-8")),
-                mimetype="text/csv",
-                as_attachment=True,
-                download_name=file_name
-            )
+                return send_file(
+                    io.BytesIO(output.getvalue().encode("utf-8")),
+                    mimetype="text/csv",
+                    as_attachment=True,
+                    download_name=file_name
+                )
 
         return jsonify({"message": "No data available"})
 
@@ -477,10 +478,7 @@ def create_app():
             id = data.get("id")
 
             if 'clinical_id' in data:
-                id = data.get("clinical_id")
-
-            if 'program_id' in data:
-                id = data.get("program_id")
+                id = data.get("clinical_id")            
 
             student_id = data.get("student_id")
             source = data.get("source")
@@ -493,6 +491,9 @@ def create_app():
                 "additional_program_data": "program_info",
                 "clinical": "clinical_placements"
             }
+
+            if source_to_table[source] == 'program_info':
+                id = data.get("student_id")
 
             to_update = data.copy()
             to_update.pop('id', None)
