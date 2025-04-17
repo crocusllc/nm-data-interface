@@ -61,7 +61,7 @@ export default function CategoryManager({displayData, formData, config, tableKey
       session: userSession,
       bodyObject: JSON.stringify({
         table_name: tableKey,
-        id: displayData.id
+        id: tableKey === "clinical_placements" ? displayData.clinical_id : displayData.student_id
       })
     }).then( response => {
       if(response) {

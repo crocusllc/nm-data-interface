@@ -406,7 +406,7 @@ def create_app():
         data = request.get_json() or {}
 
         if (data != {}):
-            if 'table_name' in data and 'id' in data:
+            if 'table_name' in data and 'clinical_id' in data:
                 id = data.get("id")
                 table = data.get("table_name")
                 
@@ -454,6 +454,20 @@ def create_app():
                     conn.commit()
 
                     query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, 'student_info', {student_id}, 1, 1, 0);"
+                    
+                    cur.execute(query_log)
+                    conn.commit()
+
+                    query = f"DELETE FROM program_info WHERE student_id={student_id};"
+                    cur.execute(query)
+                    conn.commit()
+
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, 'program_info', {student_id}, 1, 1, 0);"
+                    
+                    cur.execute(query_log)
+                    conn.commit()
+
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, 'clinical_placements', {student_id}, 1, 1, 0);"
                     
                     cur.execute(query_log)
                     conn.commit()
