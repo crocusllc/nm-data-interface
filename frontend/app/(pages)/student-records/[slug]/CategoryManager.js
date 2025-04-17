@@ -30,8 +30,12 @@ export default function CategoryManager({displayData, formData, config, tableKey
       ...data,
     }
 
-    if(displayData?.id) {
-      postData['id'] = displayData.id;
+    if(displayData?.clinical_id) {
+      postData['clinical_id'] = displayData.clinical_id;
+    }
+
+    if(displayData?.student_id) {
+      postData['student_id'] = displayData.student_id;
     }
 
     // Executing Create/Update record.
@@ -57,7 +61,7 @@ export default function CategoryManager({displayData, formData, config, tableKey
       session: userSession,
       bodyObject: JSON.stringify({
         table_name: tableKey,
-        id: displayData.id
+        id: tableKey === "clinical_placements" ? displayData.clinical_id : displayData.student_id
       })
     }).then( response => {
       if(response) {
@@ -101,9 +105,16 @@ export default function CategoryManager({displayData, formData, config, tableKey
                 )
               }
               {
-                (displayData && tableKey !== "student_info") && (
+                (displayData && tableKey == "clinical_placements") && (
                   <Stack direction="row" spacing={1} sx={{marginBottom: "8px"}}>
-                    <Chip label={`Element Id: ${displayData?.id}`} />
+                    <Chip label={`Element Id: ${displayData?.clinical_id}`} />
+                  </Stack>
+                )
+              }
+              {
+                (displayData && tableKey == "program_info") && (
+                  <Stack direction="row" spacing={1} sx={{marginBottom: "8px"}}>
+                    <Chip label={`Element Id: ${displayData?.student_id}`} />
                   </Stack>
                 )
               }

@@ -5,8 +5,11 @@ while [ ! -f /app/config.yaml ]; do
   sleep 1
 done
 
-echo "Generating key..."
-python3 /tmp/read_config.py --mode key --config /app/config.yaml --template /tmp/app_template.jinja2 --output /app/app.py
+if [ ! -s "./secret.key" ]; then
+  echo "Generating key..."
+  python3 /tmp/read_config.py --mode key --config /app/config.yaml --template /tmp/app_template.jinja2 --output /app/app.py
+fi
+
 mv ./secret.key /app/secret.key
 echo "Key generation complete."
 

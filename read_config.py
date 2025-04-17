@@ -158,10 +158,15 @@ def create_sql_files(fields):
     # Generate SQL scripts
     sql_statements = {}
     for table_name, columns in tables.items():
-        sql_statements[table_name] = f"""CREATE TABLE {table_name} ({'student_id SERIAL PRIMARY KEY,' if table_name == 'student_info' else 'id SERIAL PRIMARY KEY, '}{'student_id INTEGER, ' if table_name != 'student_info' else ''}{",".join(columns)});"""
+        base_id = "student_id"
+        
+        if table_name == 'clinical_placements':
+            base_id = "clinical_id"
 
-        if table_name != 'student_info':
-            sql_statements[table_name] += f"""ALTER TABLE {table_name} ADD CONSTRAINT {table_name}_fk_1 FOREIGN KEY (student_id) REFERENCES student_info(student_id) ON DELETE CASCADE;"""
+        if table_name == 'program_info':
+            base_id = "student_id"
+
+        sql_statements[table_name] = f"""CREATE TABLE {table_name} ({base_id} SERIAL PRIMARY KEY, {'student_id INTEGER REFERENCES student_info (student_id) ON DELETE CASCADE, ' if table_name == 'clinical_placements' else ''}{",".join(columns)});"""
     
     # Save SQL scripts to files
     for table_name, sql in sql_statements.items():

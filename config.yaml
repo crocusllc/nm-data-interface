@@ -200,7 +200,7 @@ fields:
         Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
-        Required field on Download page: true
+        Required field on Download page: false
         Include in download file: true
       field-12:
         Category: 'clinical_placements'
@@ -216,7 +216,7 @@ fields:
         Display on Student Record page?: true
         Use as filter in View/Edit search page?: false
         Use as filter on Download page?: true
-        Required field on Download page: true
+        Required field on Download page: false
         Include in download file: true
       field-13:
         Category: 'clinical_placements'
@@ -240,7 +240,7 @@ fields:
         CSV column name: placement_grade_level
         Type: select
         Validation required: false
-        Dropdown or validation values: 'PK;K;1;2;3;4;5;6;7,;8;9;9-12'
+        Dropdown or validation values: 'PK;K;1;2;3;4;5;6;7;8;9;10;11;12'
         multi-select: true
         Required field: true
         Include in bulk upload?: true

@@ -138,13 +138,13 @@ def create_app():
         data = request.get_json() or {}
 
         if (data != {}):
-            id = data.get("id")
+            username = data.get("username")
             
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
             if id is not None:
-                query = f'DELETE FROM users WHERE user_id = {id};'
+                query = f'DELETE FROM users WHERE username = {username};'
                 
                 cur.execute(query)
                 conn.commit()
@@ -185,7 +185,9 @@ def create_app():
         cur.close()
         conn.close()
 
-        return jsonify({"message": "The user was created successfully with ID {returned_id}!"})
+        message = f"The user was created successfully with ID {returned_id}!"
+
+        return jsonify({"message": message })
 
     # ========== CHANGE PASSWORD ENDPOINT ==========
     @app.route("/change_password", methods=["POST"])
@@ -252,7 +254,7 @@ def create_app():
                 if rows_to_insert:
             # Extract column names
                     columns = list(rows_to_insert[0].keys())
-                    values = [[row[col] if isinstance(row[col], str) and col != 'student_id' and col != 'id' else row[col] for col in columns] for row in rows_to_insert]
+                    values = [[row[col] if isinstance(row[col], str) and col != 'student_id' and col != 'clinical_id' and col != 'program_id' else row[col] for col in columns] for row in rows_to_insert]
             
             # Build INSERT query dynamically
                     conn = create_conn()
@@ -261,20 +263,28 @@ def create_app():
                     user_id = get_header_data(request.headers, 'id')
                     total_records= len(values)
 
-                    no_encrypt = {'student_id', 'id'}
+                    no_encrypt = {'student_id', 'clinical_id', 'program_id'}
+
+                    base_id = "student_id"
+        
+                    if table_name == 'clinical_placements':
+                        base_id = "clinical_id"
+
+                    if table_name == 'program_info':
+                        base_id = "student_id"
 
                     query = f"""
                         INSERT INTO {table_name} ({', '.join(columns)}) 
                         VALUES ({', '.join([ '%s' if no_encrypt.issuperset([col]) else f"PGP_SYM_ENCRYPT(%s, '{key_encrypt}'::text)::bytea" for col in columns])})
-                        ON CONFLICT ({'student_id' if table_name == 'student_info' else 'id' }) DO UPDATE
+                        ON CONFLICT ({base_id}) DO UPDATE
                         SET {', '.join(f"{key} = EXCLUDED.{key}" for key in columns)}
-                        RETURNING {'student_id' if table_name == 'student_info' else 'id' }
+                        RETURNING {base_id}
                     """
 
                     for row in values:
                         cur.execute(query, row)
 
-                        returned_id = cur.fetchone()['student_id' if table_name == 'student_info' else 'id']
+                        returned_id = cur.fetchone()[base_id]
                         conn.commit()
 
                         query_log = f"INSERT INTO logs(user_id, file_name, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, '{file_name}', 'uploaded', CURRENT_TIMESTAMP, '{table_name}', {returned_id}, {total_records}, 1, 0);"
@@ -344,47 +354,48 @@ def create_app():
         cur.execute(query_all)
         results = cur.fetchone()
 
-        columns = results.keys()
-        decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'id' and column != 'student_id' else "ignore" for column in columns)
+        if results is not None:
+            columns = results.keys()
+            decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'clinical_id' and column != 'program_id' and column != 'student_id' else "ignore" for column in columns)
 
-        decrypted_columns = decrypted_columns.replace("ignore,", "")
-        base_query = query_all.replace("*", f"s.student_id, c.id as clinical_id, p.id as program_id, {decrypted_columns}")
+            decrypted_columns = decrypted_columns.replace("ignore,", "")
+            base_query = query_all.replace("*", f"s.student_id, c.clinical_id, {decrypted_columns}")
 
-        cur.execute(base_query)
+            cur.execute(base_query)
 
-        result_decrypt = cur.fetchall()
+            result_decrypt = cur.fetchall()
 
-        if len(result_decrypt) >= 1:
-            user_id = get_header_data(request.headers, 'id')
-            total_records= len(result_decrypt)
-            
-            output = io.StringIO()
-            writer = csv.writer(output)
+            if len(result_decrypt) >= 1:
+                user_id = get_header_data(request.headers, 'id')
+                total_records= len(result_decrypt)
+                
+                output = io.StringIO()
+                writer = csv.writer(output)
 
-            writer.writerow(result_decrypt[0].keys())            
+                writer.writerow(result_decrypt[0].keys())            
 
-            for row in result_decrypt:
-                writer.writerow([row[field] for field in result_decrypt[0].keys()])
+                for row in result_decrypt:
+                    writer.writerow([row[field] for field in result_decrypt[0].keys()])
 
-                if row['student_id'] is None:
-                    row['student_id'] = 'all'
+                    if row['student_id'] is None:
+                        row['student_id'] = 'all'
 
-                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'downloaded', CURRENT_TIMESTAMP, 'all', {row['student_id']}, {total_records}, 1, 0);"
-                    
-                cur.execute(query_log)
-                conn.commit()
-            
-            output.seek(0)
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'downloaded', CURRENT_TIMESTAMP, 'all', {row['student_id']}, {total_records}, 1, 0);"
+                        
+                    cur.execute(query_log)
+                    conn.commit()
+                
+                output.seek(0)
 
-            cur.close()
-            conn.close()
+                cur.close()
+                conn.close()
 
-            return send_file(
-                io.BytesIO(output.getvalue().encode("utf-8")),
-                mimetype="text/csv",
-                as_attachment=True,
-                download_name=file_name
-            )
+                return send_file(
+                    io.BytesIO(output.getvalue().encode("utf-8")),
+                    mimetype="text/csv",
+                    as_attachment=True,
+                    download_name=file_name
+                )
 
         return jsonify({"message": "No data available"})
 
@@ -395,7 +406,7 @@ def create_app():
         data = request.get_json() or {}
 
         if (data != {}):
-            if 'table_name' in data and 'id' in data:
+            if 'table_name' in data and 'clinical_id' in data:
                 id = data.get("id")
                 table = data.get("table_name")
                 
@@ -446,6 +457,20 @@ def create_app():
                     
                     cur.execute(query_log)
                     conn.commit()
+
+                    query = f"DELETE FROM program_info WHERE student_id={student_id};"
+                    cur.execute(query)
+                    conn.commit()
+
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, 'program_info', {student_id}, 1, 1, 0);"
+                    
+                    cur.execute(query_log)
+                    conn.commit()
+
+                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, 'clinical_placements', {student_id}, 1, 1, 0);"
+                    
+                    cur.execute(query_log)
+                    conn.commit()
     
                     cur.close()
                     conn.close()
@@ -465,6 +490,10 @@ def create_app():
 
         if (data != {}):
             id = data.get("id")
+
+            if 'clinical_id' in data:
+                id = data.get("clinical_id")            
+
             student_id = data.get("student_id")
             source = data.get("source")
             user_id = get_header_data(request.headers, 'id')
@@ -476,6 +505,9 @@ def create_app():
                 "additional_program_data": "program_info",
                 "clinical": "clinical_placements"
             }
+
+            if source_to_table[source] == 'program_info':
+                id = data.get("student_id")
 
             to_update = data.copy()
             to_update.pop('id', None)
@@ -492,6 +524,9 @@ def create_app():
             def value_or_null(key, fernet_key):
                 value_returned = f"PGP_SYM_ENCRYPT({with_values(key)}{to_update[key]}{with_values(key)}, '{fernet_key}'::text)::bytea"
 
+                if key == 'clinical_id' or key == 'student_id':
+                    value_returned = f"{with_values(key)}{to_update[key]}{with_values(key)}"    
+
                 if isinstance(to_update[key], list):
                     value_returned = ';'.join(to_update[key])
                     value_returned = f"PGP_SYM_ENCRYPT({with_values(key)}{value_returned}{with_values(key)}, '{fernet_key}'::text)::bytea"
@@ -507,21 +542,7 @@ def create_app():
             if id is not None and student_id is not None:
                 set_values = ', '.join(f'{key} = {value_or_null(key, fernet_key)}' for key in to_update)
 
-                if source_to_table[source] != 'student_info':
-                    query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE id = {id};'
-                    cur.execute(query)
-                    conn.commit()
-                    
-                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, '{source_to_table[source]}', {id}, 1, 1, 0);"
-                    
-                    cur.execute(query_log)
-                    conn.commit()
-    
-                    cur.close()
-                    conn.close()
-                    
-                    return jsonify({"message": f"The record was updated successfully."})
-                else:
+                if source_to_table[source] == 'student_info':
                     query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE student_id = {student_id};'
                     cur.execute(query)
                     conn.commit()
@@ -535,6 +556,25 @@ def create_app():
                     conn.close()
 
                     return jsonify({"message": f"The record was created successfully."})
+
+                if source_to_table[source] == 'clinical_placements':
+                    query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE clinical_id = {id};'
+
+                if source_to_table[source] == 'program_info':
+                    query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE student_id = {id};'
+
+                cur.execute(query)
+                conn.commit()
+                
+                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, '{source_to_table[source]}', {id}, 1, 1, 0);"
+                
+                cur.execute(query_log)
+                conn.commit()
+
+                cur.close()
+                conn.close()
+                
+                return jsonify({"message": f"The record was updated successfully."})            
 
             if id is None:
                 columns = ', '.join([f'{key}' for key in to_update])
@@ -590,7 +630,15 @@ def create_app():
                     
                 return f"PGP_SYM_DECRYPT(s.{column}, '{key_encrypt}')"
 
-            query_data = f"SELECT l.source_table,l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id, {encrypt_based_column(key_encrypt, 'first_name', table)} as first_name, {encrypt_based_column(key_encrypt, 'last_name', table)} as last_name, {encrypt_based_column(key_encrypt, 'birth_date', table)} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{'student_id' if table == 'student_info' else 'id'} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'} WHERE l.source_table='{table}'"
+            base_id = "student_id"
+        
+            if table == 'clinical_placements':
+                base_id = "clinical_id"
+
+            if table == 'program_info':
+                base_id = "student_id"
+            
+            query_data = f"SELECT l.source_table, l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id, {encrypt_based_column(key_encrypt, 'first_name', table)} as first_name, {encrypt_based_column(key_encrypt, 'last_name', table)} as last_name, {encrypt_based_column(key_encrypt, 'birth_date', table)} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{base_id} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'} WHERE l.source_table='{table}'"
             
             cur.execute(query_data)
             result = cur.fetchall()
@@ -658,7 +706,7 @@ def create_app():
 
                     if program is not None:
                         columns_program = program.keys()
-                        decrypted_columns_program = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'id' and column != 'student_id' else f"{column}" for column in columns_program)
+                        decrypted_columns_program = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'clinical_id' and column != 'program_id' and column != 'student_id' else f"{column}" for column in columns_program)
 
                         cur.execute(f"SELECT {decrypted_columns_program} from program_info where student_id=%s;", (student_id,))
 
@@ -673,7 +721,7 @@ def create_app():
 
                     if clinical is not None:
                         columns_clinical = clinical.keys()
-                        decrypted_columns_clinical = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'id' and column != 'student_id' else f"{column}" for column in columns_clinical)
+                        decrypted_columns_clinical = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'clinical_id' and column != 'program_id' and column != 'student_id' else f"{column}" for column in columns_clinical)
 
                         cur.execute(f"SELECT {decrypted_columns_clinical} from clinical_placements where student_id=%s;", (student_id,))
 
@@ -691,14 +739,17 @@ def create_app():
             cur.execute("SELECT * from student_info;")
             columns_query = cur.fetchone()
             
-            columns = columns_query.keys()
+            if columns_query is not None:
+                columns = columns_query.keys()
 
-            decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'student_id' else f"{column}" for column in columns)
+                decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'student_id' else f"{column}" for column in columns)
 
-            cur.execute(f"SELECT {decrypted_columns} from student_info;")
-            result = cur.fetchall()
+                cur.execute(f"SELECT {decrypted_columns} from student_info;")
+                result = cur.fetchall()
 
-            return jsonify(result)
+                return jsonify(result)            
+            else:
+                return jsonify([])
 
         cur.close()
         conn.close()
