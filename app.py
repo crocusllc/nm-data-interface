@@ -282,6 +282,7 @@ def create_app():
                     """
 
                     for row in values:
+                        current_app.logger.info(row)
                         cur.execute(query, row)
 
                         returned_id = cur.fetchone()[base_id]
@@ -560,10 +561,24 @@ def create_app():
                 if source_to_table[source] == 'clinical_placements':
                     query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE clinical_id = {id};'
 
-                if source_to_table[source] == 'program_info':
-                    query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE student_id = {id};'
+                    cur.execute(query)
 
-                cur.execute(query)
+                if source_to_table[source] == 'program_info':
+                    no_encrypt = {'student_id', 'clinical_id', 'program_id'}
+
+                    query = f"""
+                        INSERT INTO {source_to_table[source]} (student_id,{', '.join(to_update.keys())}) 
+                        VALUES (%s, {', '.join([ '%s' if no_encrypt.issuperset([col]) else f"PGP_SYM_ENCRYPT(%s, '{fernet_key}'::text)::bytea" for col in to_update.keys()])})
+                        ON CONFLICT (student_id) DO UPDATE
+                        SET {', '.join(f"{key} = EXCLUDED.{key}" for key in to_update.keys())}
+                        RETURNING student_id
+                    """
+
+                    values = list(to_update.values())
+                    values.insert(0, id)
+
+                    cur.execute(query, values)
+                    
                 conn.commit()
                 
                 query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, '{source_to_table[source]}', {id}, 1, 1, 0);"
