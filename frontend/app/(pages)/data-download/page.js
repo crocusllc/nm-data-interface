@@ -90,7 +90,7 @@ export default function DownloadDataPage() {
             Download Selected Records:
           </Typography>
 
-          <FormBuilder formFields={downLoadFormFields} submitBtnTxt={"Download"} onSubmit={handleDownload}/>
+          <FormBuilder formFields={downLoadFormFields} submitBtnTxt={"Download"} onSubmit={handleDownload} enableLock={true}/>
         </Box>
       </Box>
 

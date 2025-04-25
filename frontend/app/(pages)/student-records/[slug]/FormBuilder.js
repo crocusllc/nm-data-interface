@@ -10,7 +10,7 @@ import {useSystemMessage} from "@/app/utils/contexts/SystemMessage";
 import DynamicSelect from "@/app/components/DynamicSelect/DynamicSelect";
 import {useGlobalValues} from "@/app/utils/contexts/GobalValues";
 
-export default function FormBuilder({formFields, onCancel, defaultData, onSubmit, submitBtnTxt = 'save', onDelete }) {
+export default function FormBuilder({formFields, onCancel, defaultData, onSubmit, submitBtnTxt = 'save', onDelete, enableLock = false }) {
   const [formData, setFormData] = useState(
     Object.fromEntries(formFields.map(field => [field["CSV column name"], defaultData?.[field["CSV column name"]] ?? '']))
   );
@@ -142,10 +142,15 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
             </Button>
           )
         }
-        <Button variant="contained" type="submit">
+        <Button variant="contained" type="submit" disabled={enableLock ? !Object.keys(formData).some( key => formData[key]) : false}>
           { submitBtnTxt }
         </Button>
       </Box>
+      {
+        (enableLock && !Object.keys(formData).some( key => formData[key])) && (
+          <Box sx={{display: "block", fontSize: "12px", textAlign:"right"}}>Please fill in at least one field to continue.</Box>
+        )
+      }
     </Stack>
   )
 }
