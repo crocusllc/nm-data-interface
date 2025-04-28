@@ -397,7 +397,7 @@ def create_app():
                     download_name=file_name
                 )
 
-        return jsonify({"message": "No data available"})
+        return "No data available"
 
     # ========== DELETE DATA ENDPOINT ==========
     @app.route("/delete_data", methods=["POST"])

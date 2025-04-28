@@ -397,7 +397,7 @@ def create_app():
                     download_name=file_name
                 )
 
-        return jsonify({"message": "No data available"})
+        return "No data available"
 
     # ========== DELETE DATA ENDPOINT ==========
     @app.route("/delete_data", methods=["POST"])
@@ -530,7 +530,7 @@ def create_app():
                 if isinstance(to_update[key], list):
                     value_returned = ';'.join(to_update[key])
                     value_returned = f"PGP_SYM_ENCRYPT({with_values(key)}{value_returned}{with_values(key)}, '{fernet_key}'::text)::bytea"                    
-
+  
                 if to_update[key] == '' or to_update[key] is None:
                     value_returned = 'NULL'
 
