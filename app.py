@@ -144,7 +144,7 @@ def create_app():
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
             if id is not None:
-                query = f'DELETE FROM users WHERE username = {username};'
+                query = f"DELETE FROM users WHERE username = '{username}';"
                 
                 cur.execute(query)
                 conn.commit()
@@ -529,8 +529,8 @@ def create_app():
 
                 if isinstance(to_update[key], list):
                     value_returned = ';'.join(to_update[key])
-                    value_returned = f"PGP_SYM_ENCRYPT({with_values(key)}{value_returned}{with_values(key)}, '{fernet_key}'::text)::bytea"
-  
+                    value_returned = f"PGP_SYM_ENCRYPT({with_values(key)}{value_returned}{with_values(key)}, '{fernet_key}'::text)::bytea"                    
+
                 if to_update[key] == '' or to_update[key] is None:
                     value_returned = 'NULL'
 
@@ -567,7 +567,7 @@ def create_app():
 
                     query = f"""
                         INSERT INTO {source_to_table[source]} (student_id,{', '.join(to_update.keys())}) 
-                        VALUES (%s, {', '.join([ '%s' if no_encrypt.issuperset([col]) else f"PGP_SYM_ENCRYPT(%s, '{fernet_key}'::text)::bytea" for col in to_update.keys()])})
+                        VALUES ({id},{', '.join([ '%s' if no_encrypt.issuperset([col]) else value_or_null(col, fernet_key) for col in to_update.keys()])})
                         ON CONFLICT (student_id) DO UPDATE
                         SET {', '.join(f"{key} = EXCLUDED.{key}" for key in to_update.keys())}
                         RETURNING student_id

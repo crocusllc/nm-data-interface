@@ -212,7 +212,7 @@ To delete a user, user the following call:
 ```
 curl -X POST <YOUR_API_URL>/db/delete_user -H 'Authorization: Bearer <YOUR_USER_TOKEN>'
      -H "Content-Type: application/json"      -d '{
-                                   "id": <USER_ID>,
+                                   "username": <USER_ID>,
                                  }'
 
 ```
