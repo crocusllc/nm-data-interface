@@ -157,18 +157,19 @@ def create_app():
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-            if username is not None:
+            cur.execute(f"SELECT username from users where username=%s;", (username,))
+                    
+            user = cur.fetchone()
+            
+            if user is not None:
                 query = f"DELETE FROM users WHERE username = '{username}';"
                 
                 result = cur.execute(query)
                 conn.commit()
 
-                if result is None:
-                    return jsonify({"error": f"The data is wrong."})
-                else:
-                    return jsonify({"message": f"The record was deleted successfully."})
+                return jsonify({"message": f"The record was deleted successfully."})
             else:
-                return jsonify({"error": f"Data missing."})
+                return jsonify({"error": f"The data is wrong."})
     
     # ========== CREATE USER ENDPOINT ==========
     @app.route("/create_user", methods=["POST"])
