@@ -80,6 +80,20 @@ def create_app():
                     decoded = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
                     request.user = decoded.get("sub")
                     request.user_role = decoded.get("role")
+
+                    username = decoded.get("sub")
+
+                    conn = create_conn()
+
+                    cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+                    cur.execute(f"SELECT user_id from users where username=%s;", (username,))
+                    
+                    user = cur.fetchone()
+
+                    cur.close()
+                    conn.close()
+                    if user is None:
+                        return jsonify({"error": "Access denied"}), 403
                     if role_required and request.user_role not in role_required:
                         return jsonify({"error": "Access denied"}), 403
                 except jwt.ExpiredSignatureError:
@@ -143,13 +157,16 @@ def create_app():
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-            if id is not None:
+            if username is not None:
                 query = f"DELETE FROM users WHERE username = '{username}';"
                 
-                cur.execute(query)
+                result = cur.execute(query)
                 conn.commit()
 
-                return jsonify({"message": f"The record was deleted successfully."})
+                if result is None:
+                    return jsonify({"error": f"The data is wrong."})
+                else:
+                    return jsonify({"message": f"The record was deleted successfully."})
             else:
                 return jsonify({"error": f"Data missing."})
     
