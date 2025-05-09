@@ -68,7 +68,7 @@ def parse_config_for_csv(config_path):
 # Function to create CSV files
 def create_csv(fields):
     student_headers = []
-    clinical_headers = []
+    clinical_headers = ['clinical_id']
     additional_headers = []
     for field in fields:
         if field[1] == 'Global':
