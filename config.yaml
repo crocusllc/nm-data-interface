@@ -72,7 +72,7 @@ fields:
         CSV column name: "program_completion_status"
         Type: select
         Validation required: false
-        Dropdown or validation values: "In progress;Complete;Withdrawn;pIn progress"
+        Dropdown or validation values: "In progress;Complete;Withdrawn"
         multi-select: false
         Required field: true
         Include in bulk upload?: true
@@ -477,7 +477,7 @@ fields:
         Include in bulk upload?: true
         Display on Student Record page?: true
         Use as filter in View/Edit search page?: true
-        Use as filter on Download page?: true
+        Use as filter on Download page?: false
         Include in download file: true
       field-30:
         Category: 'student_info'
