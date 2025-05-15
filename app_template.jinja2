@@ -350,13 +350,13 @@ def create_app():
                     fields_not_date.pop(key, None)
 
                     if "start" in key and fields[key] != '':                        
-                        start_date = f"AND PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date >= '{fields[key]}'::date "
+                        start_date = f"AND (PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date >= '{fields[key]}'::date) "
 
                     if "end" in key and fields[key] != '':
-                        end_date = f"AND PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date <= '{fields[key]}'::date "
+                        end_date = f"OR (PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date <= '{fields[key]}'::date) "
 
                     if "exit" in key and fields[key] != '':
-                        exit_date = f"AND PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date <= '{fields[key]}'::date "
+                        exit_date = f"OR (PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date <= '{fields[key]}'::date) "
 
                 if fields[key] == '':
                     fields_not_date.pop(key, None)
