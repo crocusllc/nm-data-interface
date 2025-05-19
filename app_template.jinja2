@@ -799,9 +799,8 @@ def create_app():
             "program_name": "SELECT DISTINCT program_name FROM student_info;",
             "program_completion_status": "SELECT DISTINCT program_completion_status FROM student_info;",
             "placement_type": "SELECT DISTINCT placement_type FROM clinical_placement_data;",
-            "placement_district": "SELECT DISTINCT d.district_name FROM clinical_placement_data;",
-            "placement_school": "SELECT DISTINCT s.school_name FROM placement;
-            """
+            "placement_district": "SELECT DISTINCT district_name FROM schools_districts;",
+            "placement_school": "SELECT DISTINCT school_name FROM schools_districts;"
         }
 
         data = {}

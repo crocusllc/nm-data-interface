@@ -786,6 +786,37 @@ def create_app():
         cur.close()
         conn.close()
 
+
+    # ========== OPTIONS ENDPOINT ==========
+    @app.route("/download_opts", methods=["GET"])
+    @login_required(role_required=["administrator"])
+    def get_metadata():
+        queries = {
+            "ihe_graduation_term": "SELECT DISTINCT ihe_expected_graduation_term FROM student_info;",
+            "ihe_exit_date": "SELECT DISTINCT ihe_exit_date FROM student_info;",
+            "ihe_enrollment_status": "SELECT DISTINCT ihe_enrollment_status FROM student_info;",
+            "academic_level": "SELECT DISTINCT academic_level FROM student_info;",
+            "program_name": "SELECT DISTINCT program_name FROM student_info;",
+            "program_completion_status": "SELECT DISTINCT program_completion_status FROM student_info;",
+            "placement_type": "SELECT DISTINCT placement_type FROM clinical_placement_data;",
+            "placement_district": "SELECT DISTINCT district_name FROM schools_districts;",
+            "placement_school": "SELECT DISTINCT school_name FROM schools_districts;"
+        }
+
+        data = {}
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        for key, sql in queries.items():
+            cur.execute(sql)
+            data[key] = [row[0] for row in cur.fetchall()]
+
+        cur.close()
+        conn.close()
+
+        return jsonify(data)
+
+
     return app
 
 if __name__ == "__main__":
