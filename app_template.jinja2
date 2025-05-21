@@ -804,8 +804,8 @@ def create_app():
         }
 
         data = {}
-        conn = get_db_connection()
-        cur = conn.cursor()
+        conn = create_conn()
+        cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
         for key, sql in queries.items():
             cur.execute(sql)
