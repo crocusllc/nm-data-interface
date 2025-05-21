@@ -791,16 +791,18 @@ def create_app():
     @app.route("/download_opts", methods=["GET"])
     @login_required(role_required=["administrator"])
     def get_metadata():
+        key_encrypt = load_key()
+
         queries = {
-            "ihe_graduation_term": "SELECT DISTINCT ihe_expected_graduation_term FROM student_info;",
-            "ihe_exit_date": "SELECT DISTINCT ihe_exit_date FROM student_info;",
-            "ihe_enrollment_status": "SELECT DISTINCT ihe_enrollment_status FROM student_info;",
-            "academic_level": "SELECT DISTINCT academic_level FROM student_info;",
-            "program_name": "SELECT DISTINCT program_name FROM student_info;",
-            "program_completion_status": "SELECT DISTINCT program_completion_status FROM student_info;",
-            "placement_type": "SELECT DISTINCT placement_type FROM clinical_placement_data;",
-            "placement_district": "SELECT DISTINCT district_name FROM schools_districts;",
-            "placement_school": "SELECT DISTINCT school_name FROM schools_districts;"
+            "ihe_graduation_term": f"SELECT DISTINCT PGP_SYM_DECRYPT(ihe_expected_graduation_term,'{key_encrypt}'::text) as ihe_expected_graduation_term FROM student_info;",
+            "ihe_exit_date": f"SELECT DISTINCT PGP_SYM_DECRYPT(ihe_exit_date,'{key_encrypt}'::text) as ihe_exit_date FROM student_info;",
+            "ihe_enrollment_status": f"SELECT DISTINCT PGP_SYM_DECRYPT(ihe_enrollment_status,'{key_encrypt}'::text) as ihe_enrollment_status FROM student_info;",
+            "academic_level": f"SELECT DISTINCT PGP_SYM_DECRYPT(academic_level,'{key_encrypt}'::text) as academic_level FROM student_info;",
+            "program_name": f"SELECT DISTINCT PGP_SYM_DECRYPT(program_name,'{key_encrypt}'::text) as program_name FROM student_info;",
+            "program_completion_status": f"SELECT DISTINCT PGP_SYM_DECRYPT(program_completion_status,'{key_encrypt}'::text) as program_completion_status FROM program_info;",
+            "placement_type": f"SELECT DISTINCT PGP_SYM_DECRYPT(placement_type,'{key_encrypt}'::text) as placement_type FROM clinical_placements;",
+            "placement_district": f"SELECT DISTINCT district_name FROM schools_districts;",
+            "placement_school": f"SELECT DISTINCT school_name FROM schools_districts;"
         }
 
         data = {}
@@ -809,7 +811,16 @@ def create_app():
 
         for key, sql in queries.items():
             cur.execute(sql)
-            data[key] = [row[0] for row in cur.fetchall()]
+
+            rows = cur.fetchall()
+
+            all_values = []
+            for row in rows:
+                values_only = list(row.values())
+                all_values.append(values_only[0])
+
+            data[key] = all_values
+
 
         cur.close()
         conn.close()
