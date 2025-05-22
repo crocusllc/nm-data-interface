@@ -8,23 +8,52 @@ import getConfigData from "@/app/utils/getConfigs";
 import FormBuilder from "@/app/(pages)/student-records/[slug]/FormBuilder";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import {GlobalValuesProvider} from "@/app/utils/contexts/GobalValues";
+import {useEffect, useState} from "react";
+import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
+import Skeleton from '@mui/material/Skeleton';
 
 export default function DownloadDataPage() {
   const { userSession } = useAuth();
+  const handleApiRequest = useHandleApiRequest();
+  const [formFields, setFormFields] = useState()
 
   const studentRecordFormFields = getConfigData()?.fields
     ?.find( el => el?.form?.Name === "Student Records")?.form;
 
   const studentRecordKeys = Object.keys(studentRecordFormFields);
 
-  let downLoadFormFields = [];
+  useEffect(()=> {
+    if(userSession && !formFields) {
+      handleApiRequest({
+        action: "download_opts",
+        session: userSession,
+        bodyObject: null
+      }).then( res => {
+        if(res) {
+          const dropdownFields = Object.keys(res);
+          let downLoadFormFields = [];
+          // Getting form fields and updated type to render dropdowns.
+          studentRecordKeys.forEach( el => {
+            if(studentRecordFormFields[el]['Use as filter on Download page?']) {
+              studentRecordFormFields[el]['Required field'] = studentRecordFormFields[el]['Required field on Download page'] ?? false;
 
-  studentRecordKeys.forEach( el => {
-    if(studentRecordFormFields[el]['Use as filter on Download page?']){
-      studentRecordFormFields[el]['Required field'] = studentRecordFormFields[el]['Required field on Download page'] ?? false;
-      downLoadFormFields.push(studentRecordFormFields[el])
+              if(dropdownFields.includes(studentRecordFormFields[el]['CSV column name'])) {
+                const dropdownValues =  res[studentRecordFormFields[el]['CSV column name']].filter(element => element !== null);
+                studentRecordFormFields[el]["Type"] = "select";
+                //studentRecordFormFields[el]["multi-select"] = true;
+                studentRecordFormFields[el]["Dropdown or validation values"] = (dropdownValues.toString()).replaceAll(',', ';')
+              }
+
+              downLoadFormFields.push(studentRecordFormFields[el])
+            }
+          });
+          setFormFields(downLoadFormFields)
+        }
+      });
     }
-  });
+  },[userSession])
+
+
 
   // Handle download actions
   const handleDownload = async (fieldsSelected) => {
@@ -67,7 +96,6 @@ export default function DownloadDataPage() {
     } catch (error) {
       console.error("Error fetching student record info:", error);
     }
-
   };
 
   return (
@@ -90,7 +118,18 @@ export default function DownloadDataPage() {
             Download Selected Records:
           </Typography>
 
-          <FormBuilder formFields={downLoadFormFields} submitBtnTxt={"Download"} onSubmit={handleDownload} enableLock={true}/>
+          {
+            formFields ? (
+              <FormBuilder formFields={formFields} submitBtnTxt={"Download"} onSubmit={handleDownload} enableLock={true}/>
+            ) : (
+              <Box sx={{ width: "80%", margin: "auto", display: "flex", flexDirection: "column" }}>
+                <Skeleton variant="rectangular"  height={40} sx={{marginBottom: "8px"}} />
+                <Skeleton variant="rectangular"  height={40} sx={{marginBottom: "8px"}} />
+                <Skeleton variant="rectangular" height={40} sx={{marginBottom: "8px"}} />
+                <Skeleton variant="rounded" width={120} height={40} sx={{marginBottom: "8px", alignSelf: "flex-end"}} />
+              </Box>
+            )
+          }
         </Box>
       </Box>
 

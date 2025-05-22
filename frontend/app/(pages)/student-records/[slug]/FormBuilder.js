@@ -9,6 +9,10 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {useSystemMessage} from "@/app/utils/contexts/SystemMessage";
 import DynamicSelect from "@/app/components/DynamicSelect/DynamicSelect";
 import {useGlobalValues} from "@/app/utils/contexts/GobalValues";
+import Autocomplete from '@mui/material/Autocomplete';
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
+import {ClearIcon} from "@mui/x-date-pickers";
 
 export default function FormBuilder({formFields, onCancel, defaultData, onSubmit, submitBtnTxt = 'save', onDelete, enableLock = false }) {
   const [formData, setFormData] = useState(
@@ -62,6 +66,15 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
                     label={field['Data element label']}
                     onChange={(e) => handleChange(field['CSV column name'], e.target.value)}
                     multiple={field["multi-select"]}
+                    endAdornment={
+                      <InputAdornment sx={{ marginRight: "10px" }} position="end">
+                        <IconButton
+                          onClick={() =>  handleChange(field['CSV column name'], "")}
+                        >
+                          <ClearIcon fontSize="small"></ClearIcon>
+                        </IconButton>
+                      </InputAdornment>
+                    }
                   >
                     {
                       field['Dropdown or validation values']?.split(";").map( (opt, i) => <MenuItem key={i} value={opt}>{opt}</MenuItem>)
