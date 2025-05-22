@@ -40,7 +40,7 @@ export default function DownloadDataPage() {
               if(dropdownFields.includes(studentRecordFormFields[el]['CSV column name'])) {
                 const dropdownValues =  res[studentRecordFormFields[el]['CSV column name']].filter(element => element !== null);
                 studentRecordFormFields[el]["Type"] = "select";
-                studentRecordFormFields[el]["multi-select"] = true;
+                //studentRecordFormFields[el]["multi-select"] = true;
                 studentRecordFormFields[el]["Dropdown or validation values"] = (dropdownValues.toString()).replaceAll(',', ';')
               }
 
