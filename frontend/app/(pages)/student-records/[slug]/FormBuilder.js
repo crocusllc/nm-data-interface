@@ -67,7 +67,7 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
                     onChange={(e) => handleChange(field['CSV column name'], e.target.value)}
                     multiple={field["multi-select"]}
                     endAdornment={
-                      <InputAdornment sx={{ marginRight: "10px" }} position="end">
+                      <InputAdornment sx={{ marginRight: "10px", position: "absolute", right: "10px" }} position="end">
                         <IconButton
                           onClick={() =>  handleChange(field['CSV column name'], "")}
                         >
