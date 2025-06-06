@@ -264,7 +264,7 @@ def create_app():
 
             rows_to_insert = []
             for row in csv_reader:
-                row_data = {field: row[field] if row[field] != '' else None for field in fields if field in row}
+                row_data = {field.rstrip(): row[field.rstrip()] if row[field.rstrip()] != '' else None for field in fields if field.rstrip() in row}
                 rows_to_insert.append(row_data)
 
             # Insert data using psycopg2
