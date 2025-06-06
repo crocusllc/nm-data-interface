@@ -37,7 +37,7 @@ export default function DownloadDataPage() {
             if(studentRecordFormFields[el]['Use as filter on Download page?']) {
               studentRecordFormFields[el]['Required field'] = studentRecordFormFields[el]['Required field on Download page'] ?? false;
 
-              if(dropdownFields.includes(studentRecordFormFields[el]['CSV column name'])) {
+              if(dropdownFields.includes(studentRecordFormFields[el]['CSV column name']) && studentRecordFormFields[el]["Type"] !== "date") {
                 const dropdownValues =  res[studentRecordFormFields[el]['CSV column name']].filter(element => element !== null);
                 studentRecordFormFields[el]["Type"] = "select";
                 //studentRecordFormFields[el]["multi-select"] = true;
