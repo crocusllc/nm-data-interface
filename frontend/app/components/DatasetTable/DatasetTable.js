@@ -16,7 +16,6 @@ export default function DatasetTable({rowsData, columnsData, selectionHook = nul
       removableSort
       selection={selectionHook}
       onSelectionChange={selectionFn}
-      selectionMode={selectionMode}
       {...configs}
     >
       {
