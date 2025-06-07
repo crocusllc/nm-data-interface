@@ -148,7 +148,14 @@ export default function StudentRecordsPage() {
               )
             }
             <Box>
-              <DatasetTable rowsData={studentRecords} columnsData={tableColumns} selectionMode={'checkbox'} selectionFn={(e) => setSelectedRows(e.value)} selectionHook={selectedRows}/>
+              <DatasetTable
+                rowsData={studentRecords}
+                columnsData={tableColumns}
+                selectionMode={'checkbox'}
+                selectionFn={(e) => setSelectedRows(e.value)}
+                selectionHook={selectedRows}
+                configs={{sortField: "first_name", sortOrder: 1}}
+              />
             </Box>
           </>
         )

@@ -3,7 +3,7 @@ import {DataTable} from "primereact/datatable";
 import React from "react";
 import "primereact/resources/themes/lara-light-cyan/theme.css";
 
-export default function DatasetTable({rowsData, columnsData, selectionHook = null, selectionFn = null, selectionMode = null }) {
+export default function DatasetTable({rowsData, columnsData, selectionHook = null, selectionFn = null, selectionMode = null, configs = {} }) {
 
   return(
     <DataTable
@@ -17,6 +17,7 @@ export default function DatasetTable({rowsData, columnsData, selectionHook = nul
       selection={selectionHook}
       onSelectionChange={selectionFn}
       selectionMode={selectionMode}
+      {...configs}
     >
       {
         selectionHook && (
