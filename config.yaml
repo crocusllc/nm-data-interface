@@ -255,7 +255,7 @@ fields:
         CSV column name: placement_licensure_level
         Type: select
         Validation required: false
-        Dropdown or validation values: 'Birth-PreK;PreK-3;Elementary;K-8;Secondary 7-12'
+        Dropdown or validation values: 'Birth-PreK;PreK-3;Elementary;K-8;Secondary 7-12;SPED'
         multi-select: true
         Required field: false
         Include in bulk upload?: true
