@@ -998,5 +998,5 @@ INSERT INTO schools_districts (school_name,state_name,school_id,district_name,ag
 INSERT INTO schools_districts (school_name,state_name,school_id,district_name,agency_id,school_type,agency_type,charter_school,latitude,longitude,congressional_code,national_school_lunch_program) VALUES
      ('OTHER',null,null,'OTHER',null,null,null,null,null,null,null,null);
 INSERT INTO schools_districts (school_name,state_name,school_id,district_name,agency_id,school_type,agency_type,charter_school,latitude,longitude,congressional_code,national_school_lunch_program) VALUES
-    ('St. Pius X HS',null,null,'Archdiocese of Santa Fe',null,null,null,null,null,null,null,null),
-    ('Holy Cross Catholic School',null,null,'Archdiocese of Santa Fe',null,null,null,null,null,null,null,null);
+    ('ST. PIUS X HS',null,null,'ARCHDIOCESE OF SANTA FE',null,null,null,null,null,null,null,null),
+    ('HOLY CROSS CATHOLIC SCHOOL',null,null,'ARCHDIOCESE OF SANTA FE',null,null,null,null,null,null,null,null);
