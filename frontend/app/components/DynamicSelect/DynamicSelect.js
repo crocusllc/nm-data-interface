@@ -13,6 +13,10 @@ export default function DynamicSelect({actionPath, field, formData, changeFn, me
   const [options, setOptions] = useState();
   const {globalValues, setGlobalValue} = useGlobalValues();
 
+  const onLoadFieldValue = formData?.[field['CSV column name']];
+  const fieldValue = Array.isArray(onLoadFieldValue)
+    ? onLoadFieldValue : onLoadFieldValue?.split(';') || [];
+
   useEffect(()=> {
     if(!options && !field['Depends on'] && userSession) {
       handleApiRequest({
@@ -41,10 +45,14 @@ export default function DynamicSelect({actionPath, field, formData, changeFn, me
         bodyObject: JSON.stringify({district_name: param})
       }).then( res => {
         if(res) {
-          // Cleaning field value if new options are set.
-          changeFn(field['CSV column name'], "")
+          const optionsArray = res?.split(";");
           // Set school options.
-          setOptions(res?.split(";"));
+          setOptions(optionsArray);
+          // Check if the value of the field matches with the options fetched.
+          if(!optionsArray.some( el  => el === fieldValue[0])) {
+            // Cleaning field value if new options are set.
+            changeFn(field['CSV column name'], "")
+          }
         }
       });
     }
@@ -58,7 +66,7 @@ export default function DynamicSelect({actionPath, field, formData, changeFn, me
       options={options?.map(option => option)}
       onChange={ (e, newValue) => changeFn(field['CSV column name'], newValue)}
       getOptionLabel={option => option}
-      value={ formData?.[field['CSV column name']] ?? (field["multi-select"] ? [] : '')}
+      value={ field["multi-select"] ? fieldValue : fieldValue[0]}
       renderInput={(params) => (
         <TextField
           {...params}
