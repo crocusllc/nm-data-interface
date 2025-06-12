@@ -4,8 +4,10 @@ import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
 import CircularProgress from '@mui/material/CircularProgress';
 import {useGlobalValues} from "@/app/utils/contexts/GobalValues";
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
 
-export default function DynamicSelect({actionPath, field, formData, changeFn, method}) {
+export default function DynamicSelect({actionPath, field, formData, changeFn, method, required}) {
   const { userSession } = useAuth();
   const handleApiRequest = useHandleApiRequest();
   const [options, setOptions] = useState();
@@ -39,6 +41,9 @@ export default function DynamicSelect({actionPath, field, formData, changeFn, me
         bodyObject: JSON.stringify({district_name: param})
       }).then( res => {
         if(res) {
+          // Cleaning field value if new options are set.
+          changeFn(field['CSV column name'], "")
+          // Set school options.
           setOptions(res?.split(";"));
         }
       });
@@ -46,34 +51,22 @@ export default function DynamicSelect({actionPath, field, formData, changeFn, me
   },[globalValues?.[field['Depends on']]])
 
   return (
-    <>
-      <InputLabel id={`${[field['CSV column name']]}-label`}>
-        {field['Data element label']}
-      </InputLabel>
-      <Select
-        labelId={`${[field['CSV column name']]}-label`}
-        id={field['CSV column name']}
-        value={ options
-          ? formData?.[field['CSV column name']] ?? (field["multi-select"] ? [] : '')
-          : (field["multi-select"] ? [] : '')
-        }
-        label={field['Data element label']}
-        onChange={(e) => changeFn(field['CSV column name'], e.target.value)}
-        multiple={field["multi-select"]}
-      >
-        { !options ? (
-          <MenuItem disabled>
-            <CircularProgress size={24} />
-            &nbsp; Loading options...
-          </MenuItem>
-        ) : (
-          options?.map((option, i) => (
-            <MenuItem key={i} value={option}>
-              {option}
-            </MenuItem>
-          ))
-        )}
-      </Select>
-    </>
+    <Autocomplete
+      multiple={field["multi-select"]}
+      id={field['CSV column name']}
+      disabled={!options}
+      options={options?.map(option => option)}
+      onChange={ (e, newValue) => changeFn(field['CSV column name'], newValue)}
+      getOptionLabel={option => option}
+      value={ formData?.[field['CSV column name']] ?? (field["multi-select"] ? [] : '')}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          variant="filled"
+          label={field['Data element label']}
+          required={required}
+        />
+      )}
+    />
   )
 }
