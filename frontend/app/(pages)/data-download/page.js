@@ -5,7 +5,7 @@ import {
   Typography,
 } from "@mui/material";
 import getConfigData from "@/app/utils/getConfigs";
-import FormBuilder from "@/app/(pages)/student-records/[slug]/FormBuilder";
+import FormBuilder from "@/app/components/FormBuilder/FormBuilder";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import {GlobalValuesProvider} from "@/app/utils/contexts/GobalValues";
 import {useEffect, useState} from "react";

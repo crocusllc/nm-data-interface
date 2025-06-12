@@ -2,7 +2,7 @@ import {IconButton, Stack} from "@mui/material";
 import Box from "@mui/material/Box";
 import React, {useState} from "react";
 import EditIcon from "@mui/icons-material/Edit";
-import FormBuilder from "@/app/(pages)/student-records/[slug]/FormBuilder";
+import FormBuilder from "@/app/components/FormBuilder/FormBuilder";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
