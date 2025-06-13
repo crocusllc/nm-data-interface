@@ -350,13 +350,13 @@ def create_app():
                     fields_not_date.pop(key, None)
 
                     if "start" in key and fields[key] != '':                        
-                        start_date = f"AND (PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date >= '{fields[key]}'::date) "
+                        start_date = f"OR (TO_DATE(PGP_SYM_DECRYPT({key},'{key_encrypt}'::text), 'MM/DD/YYYY') >= '{fields[key]}'::date) "
 
                     if "end" in key and fields[key] != '':
-                        end_date = f"OR (PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date <= '{fields[key]}'::date) "
+                        end_date = f"OR (TO_DATE(PGP_SYM_DECRYPT({key},'{key_encrypt}'::text), 'MM/DD/YYYY') <= '{fields[key]}'::date) "
 
                     if "exit" in key and fields[key] != '':
-                        exit_date = f"OR (PGP_SYM_DECRYPT({key},'{key_encrypt}'::text)::date <= '{fields[key]}'::date) "
+                        exit_date = f"OR (TO_DATE(PGP_SYM_DECRYPT({key},'{key_encrypt}'::text), 'MM/DD/YYYY') <= '{fields[key]}'::date) "
 
                 if fields[key] == '':
                     fields_not_date.pop(key, None)
@@ -634,7 +634,7 @@ def create_app():
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT DISTINCT district_name from schools_districts ORDER BY district_name ASC;")
+        cur.execute("SELECT DISTINCT district_name from schools_districts;")
         result = cur.fetchall()
 
         cur.close()
@@ -694,7 +694,7 @@ def create_app():
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-            cur.execute("SELECT DISTINCT school_name FROM schools_districts WHERE district_name = %s ORDER BY school_name ASC;", (district,))
+            cur.execute("SELECT DISTINCT school_name FROM schools_districts WHERE district_name = %s;", (district,))
             result = cur.fetchall()
 
             cur.close()
@@ -770,43 +770,16 @@ def create_app():
         if request.method == 'GET':
             cur.execute("SELECT * from student_info;")
             columns_query = cur.fetchone()
-
+            
             if columns_query is not None:
                 columns = columns_query.keys()
-                # Construct the SELECT statement for student info, decrypting non-id columns
+
                 decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'student_id' else f"{column}" for column in columns)
 
                 cur.execute(f"SELECT {decrypted_columns} from student_info;")
-                students_data = cur.fetchall() # Get ALL student records
+                result = cur.fetchall()
 
-                # 2. Iterate through each student and add clinical placement types
-                for student in students_data:
-                    student_id = student['student_id'] # Get the student_id for the current student
-
-                    # Query clinical_placements for the current student to get all placement_type values
-                    # Since 'placement_type' is encrypted, we must decrypt it here.
-                    cur.execute(
-                        f"SELECT PGP_SYM_DECRYPT(placement_type, '{key_encrypt}'::text) as placement_type "
-                        f"FROM clinical_placements WHERE student_id = %s;",
-                        (student_id,)
-                    )
-                    clinical_placements_for_student = cur.fetchall()
-
-                    # Extract placement_type values into a list
-                    placement_types = [
-                        cp['placement_type'] for cp in clinical_placements_for_student
-                        if 'placement_type' in cp and cp['placement_type'] is not None
-                    ]
-
-                    # Sort the placement types alphabetically ascending
-                    placement_types.sort()
-
-                    # Join the placement types into a comma-separated string
-                    # If no placements, it will be an empty string
-                    student['placement_type'] = ", ".join(placement_types)
-
-                # 3. Return the enriched student data
-                return jsonify(students_data)
+                return jsonify(result)            
             else:
                 return jsonify([])
 
