@@ -634,7 +634,7 @@ def create_app():
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT DISTINCT district_name from schools_districts;")
+        cur.execute("SELECT DISTINCT district_name from schools_districts ORDER BY district_name ASC;")
         result = cur.fetchall()
 
         cur.close()
@@ -694,7 +694,7 @@ def create_app():
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-            cur.execute("SELECT DISTINCT school_name FROM schools_districts WHERE district_name = %s;", (district,))
+            cur.execute("SELECT DISTINCT school_name FROM schools_districts WHERE district_name = %s ORDER BY school_name ASC;", (district,))
             result = cur.fetchall()
 
             cur.close()
