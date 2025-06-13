@@ -9,7 +9,6 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {useSystemMessage} from "@/app/utils/contexts/SystemMessage";
 import DynamicSelect from "@/app/components/DynamicSelect/DynamicSelect";
 import {useGlobalValues} from "@/app/utils/contexts/GobalValues";
-import Autocomplete from '@mui/material/Autocomplete';
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 import {ClearIcon} from "@mui/x-date-pickers";
@@ -94,6 +93,7 @@ export default function FormBuilder({formFields, onCancel, defaultData, onSubmit
                     method={apiData?.method}
                     formData={formData}
                     changeFn={handleChange}
+                    required={field["Required field"]}
                   />
                 </FormControl>
               )

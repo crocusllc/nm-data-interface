@@ -995,3 +995,8 @@ INSERT INTO schools_districts (school_name,state_name,school_id,district_name,ag
 INSERT INTO schools_districts (school_name,state_name,school_id,district_name,agency_id,school_type,agency_type,charter_school,latitude,longitude,congressional_code,national_school_lunch_program) VALUES
 	 ('ZUNI HIGH','NEW MEXICO',350280000676,'ZUNI PUBLIC SCHOOLS',3502800,'1-Regular school','1-Regular local school district that is NOT a component of a supervisory union','2-No',35.082233,-108.805115,3503,'Yes under Community Eligibility Option (CEO)'),
 	 ('ZUNI MIDDLE','NEW MEXICO',350280000678,'ZUNI PUBLIC SCHOOLS',3502800,'1-Regular school','1-Regular local school district that is NOT a component of a supervisory union','2-No',35.075183,-108.839671,3502,'Yes under Community Eligibility Option (CEO)');
+INSERT INTO schools_districts (school_name,state_name,school_id,district_name,agency_id,school_type,agency_type,charter_school,latitude,longitude,congressional_code,national_school_lunch_program) VALUES
+     ('OTHER',null,null,'OTHER',null,null,null,null,null,null,null,null);
+INSERT INTO schools_districts (school_name,state_name,school_id,district_name,agency_id,school_type,agency_type,charter_school,latitude,longitude,congressional_code,national_school_lunch_program) VALUES
+    ('ST. PIUS X HS',null,null,'ARCHDIOCESE OF SANTA FE',null,null,null,null,null,null,null,null),
+    ('HOLY CROSS CATHOLIC SCHOOL',null,null,'ARCHDIOCESE OF SANTA FE',null,null,null,null,null,null,null,null);

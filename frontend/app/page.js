@@ -3,7 +3,7 @@
 import Box from '@mui/material/Box';
 import Link from "next/link";
 import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
-import {Stack, Typography} from "@mui/material";
+import {Stack} from "@mui/material";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import {useEffect, useState} from "react";
 import { redirect } from 'next/navigation'

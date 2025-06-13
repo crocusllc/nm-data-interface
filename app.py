@@ -770,16 +770,43 @@ def create_app():
         if request.method == 'GET':
             cur.execute("SELECT * from student_info;")
             columns_query = cur.fetchone()
-            
+
             if columns_query is not None:
                 columns = columns_query.keys()
-
+                # Construct the SELECT statement for student info, decrypting non-id columns
                 decrypted_columns = ', '.join(f"PGP_SYM_DECRYPT({column}, '{key_encrypt}'::text) as {column}" if column != 'student_id' else f"{column}" for column in columns)
 
                 cur.execute(f"SELECT {decrypted_columns} from student_info;")
-                result = cur.fetchall()
+                students_data = cur.fetchall() # Get ALL student records
 
-                return jsonify(result)            
+                # 2. Iterate through each student and add clinical placement types
+                for student in students_data:
+                    student_id = student['student_id'] # Get the student_id for the current student
+
+                    # Query clinical_placements for the current student to get all placement_type values
+                    # Since 'placement_type' is encrypted, we must decrypt it here.
+                    cur.execute(
+                        f"SELECT PGP_SYM_DECRYPT(placement_type, '{key_encrypt}'::text) as placement_type "
+                        f"FROM clinical_placements WHERE student_id = %s;",
+                        (student_id,)
+                    )
+                    clinical_placements_for_student = cur.fetchall()
+
+                    # Extract placement_type values into a list
+                    placement_types = [
+                        cp['placement_type'] for cp in clinical_placements_for_student
+                        if 'placement_type' in cp and cp['placement_type'] is not None
+                    ]
+
+                    # Sort the placement types alphabetically ascending
+                    placement_types.sort()
+
+                    # Join the placement types into a comma-separated string
+                    # If no placements, it will be an empty string
+                    student['placement_type'] = ", ".join(placement_types)
+
+                # 3. Return the enriched student data
+                return jsonify(students_data)
             else:
                 return jsonify([])
 
