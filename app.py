@@ -366,6 +366,7 @@ def create_app():
             query_all = f'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id WHERE {conditions} {start_date} {end_date} {exit_date};'
             query_all = query_all.replace("  ", " ")
             query_all = query_all.replace("WHERE AND", "WHERE")
+            query_all = query_all.replace("WHERE OR", "WHERE")
         else:
             query_all = f'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id;'
 
