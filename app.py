@@ -371,6 +371,7 @@ def create_app():
         else:
             query_all = f'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id;'
 
+        current_app.logger.info(query_all)
         cur.execute(query_all)
         results = cur.fetchone()
 
