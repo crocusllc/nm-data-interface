@@ -341,19 +341,22 @@ def create_app():
         end_date = ''
         exit_date = ''
 
+        date_condition = ''
+
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
         if query_fields != "*":
+            if ("start_date" in fields and fields['start_date'] != '') and ("end_date" in fields and fields['end_date'] != ''):
+                date_condition = f"((TO_DATE(PGP_SYM_DECRYPT('start_date','{key_encrypt}'::text), 'MM/DD/YYYY') >= '{fields['start_date']}'::date AND TO_DATE(PGP_SYM_DECRYPT('end_date','{key_encrypt}'::text), 'MM/DD/YYYY') <= '{fields['start_date']}'::date) OR (TO_DATE(PGP_SYM_DECRYPT('start_date','{key_encrypt}'::text), 'MM/DD/YYYY') >= '{fields['end_date']}'::date AND TO_DATE(PGP_SYM_DECRYPT('end_date','{key_encrypt}'::text), 'MM/DD/YYYY') <= '{fields['end_date']}'::date))"
+            elif ("start_date" in fields and fields['start_date'] != ''):
+                date_condition = f"(TO_DATE(PGP_SYM_DECRYPT('start_date','{key_encrypt}'::text), 'MM/DD/YYYY') >= '{fields['start_date']}'::date)"
+            elif ("end_date" in fields and fields['start_date'] != ''):
+                date_condition = f"(TO_DATE(PGP_SYM_DECRYPT('end_date','{key_encrypt}'::text), 'MM/DD/YYYY') <= '{fields['end_date']}'::date)"
+
             for key in fields:
                 if "date" in key:
                     fields_not_date.pop(key, None)
-
-                    if "start" in key and fields[key] != '':                        
-                        start_date = f"OR (TO_DATE(PGP_SYM_DECRYPT({key},'{key_encrypt}'::text), 'MM/DD/YYYY') >= '{fields[key]}'::date) "
-
-                    if "end" in key and fields[key] != '':
-                        end_date = f"OR (TO_DATE(PGP_SYM_DECRYPT({key},'{key_encrypt}'::text), 'MM/DD/YYYY') <= '{fields[key]}'::date) "
 
                     if "exit" in key and fields[key] != '':
                         exit_date = f"OR (TO_DATE(PGP_SYM_DECRYPT({key},'{key_encrypt}'::text), 'MM/DD/YYYY') <= '{fields[key]}'::date) "
@@ -363,7 +366,7 @@ def create_app():
 
             conditions = " AND ".join([f"lower(PGP_SYM_DECRYPT({key}, '{key_encrypt}'::text)) like lower('%{fields_not_date[key]}%')" for key in fields_not_date])
 
-            query_all = f'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id WHERE {conditions} {start_date} {end_date} {exit_date};'
+            query_all = f'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id WHERE {conditions} {date_condition} {exit_date};'
             query_all = query_all.replace("  ", " ")
             query_all = query_all.replace("WHERE AND", "WHERE")
             query_all = query_all.replace("WHERE OR", "WHERE")
