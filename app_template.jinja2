@@ -348,7 +348,7 @@ def create_app():
 
         if query_fields != "*":
             if ("placement_start_date" in fields and fields['placement_start_date'] != '') and ("placement_end_date" in fields and fields['placement_end_date'] != ''):
-                date_condition = f"('{fields['placement_start_date']}'::date BETWEEN TO_DATE(PGP_SYM_DECRYPT(placement_start_date,'{key_encrypt}'::text), 'MM/DD/YYYY') AND TO_DATE(PGP_SYM_DECRYPT(placement_end_date,'{key_encrypt}'::text), 'MM/DD/YYYY')) OR ('{fields['placement_end_date']}'::date BETWEEN TO_DATE(PGP_SYM_DECRYPT(placement_start_date,'{key_encrypt}'::text), 'MM/DD/YYYY') AND TO_DATE(PGP_SYM_DECRYPT(placement_end_date,'{key_encrypt}'::text), 'MM/DD/YYYY'))"
+                date_condition = f"(TO_DATE(PGP_SYM_DECRYPT(placement_start_date,'{key_encrypt}'::text), 'MM/DD/YYYY') BETWEEN '{fields['placement_start_date']}'::date AND '{fields['placement_end_date']}'::date) OR (TO_DATE(PGP_SYM_DECRYPT(placement_end_date,'{key_encrypt}'::text), 'MM/DD/YYYY') BETWEEN '{fields['placement_start_date']}'::date AND '{fields['placement_end_date']}'::date)"
             elif ("placement_start_date" in fields and fields['placement_start_date'] != ''):
                 date_condition = f"(TO_DATE(PGP_SYM_DECRYPT(placement_start_date,'{key_encrypt}'::text), 'MM/DD/YYYY') >= '{fields['placement_start_date']}'::date)"
             elif ("placement_end_date" in fields and fields['placement_end_date'] != ''):
