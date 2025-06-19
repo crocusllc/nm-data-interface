@@ -341,6 +341,8 @@ def create_app():
         end_date = ''
         exit_date = ''
 
+        date_condition = ''
+
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
