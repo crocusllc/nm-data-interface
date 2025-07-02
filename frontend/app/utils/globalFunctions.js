@@ -36,7 +36,7 @@ export function dateFormat(dateStr) {
   if (isNaN(date.getTime())) return "";
 
   // Get UTC components and format them
-  const year = date.getUTCFullYear().toString().slice(-2); 
+  const year = date.getUTCFullYear().toString(); 
   const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
   const day = date.getUTCDate().toString().padStart(2, '0');
 
