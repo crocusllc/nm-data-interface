@@ -542,7 +542,7 @@ fields:
       field-34:
         Category: 'student_info'
         Order within category: 8
-        Data element label: 'Ihe Entry Term'
+        Data element label: 'IHE Entry Term'
         CSV column name: ihe_entry_term
         Type: text
         Validation required: false

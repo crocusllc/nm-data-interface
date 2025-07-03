@@ -24,10 +24,19 @@ export default function CategoryManager({displayData, formData, config, tableKey
   }
 
   const handleSubmit = async (data) => {
+    const mappedData = Object.fromEntries(
+      Object.entries(data).map(([key, value]) => {
+        if (key.includes('date')) {
+          return [key, dateFormat(value)];
+        }
+        return [key, value];
+      })
+    );
+
     const postData = {
       student_id: studentId,
       source: source_to_table[tableKey], // This determines which table is updated
-      ...data,
+      ...mappedData,
     }
 
     if(displayData?.clinical_id) {
