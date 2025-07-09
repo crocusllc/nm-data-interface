@@ -375,9 +375,9 @@ def create_app():
                 """
                 where_conditions.append(date_range_condition)
             elif start_date:
-                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_start_date,'{key_encrypt}'::text), 'MM/DD/YYYY') >= '{start_date}'::date)")
+                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_end_date, '{key_encrypt}'::text), 'MM/DD/YYYY') >= '{start_date}'::date)")
             elif end_date:
-                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_end_date,'{key_encrypt}'::text), 'MM/DD/YYYY') <= '{end_date}'::date)")
+                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_start_date, '{key_encrypt}'::text), 'MM/DD/YYYY') <= '{end_date}'::date)")
 
             # Adding exit_date_val as AND condition because is not part of start or end date.
             exit_date_val = fields.get('exit_date')

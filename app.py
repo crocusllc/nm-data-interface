@@ -362,7 +362,7 @@ def create_app():
                 text_conditions = " AND ".join([f"lower(PGP_SYM_DECRYPT({key}, '{key_encrypt}'::text)) like lower('%{value}%')" for key, value in fields_not_date.items()])
                 where_conditions.append(f"({text_conditions})")
 
-            # Add date
+            # Add date data.
             start_date = fields.get('placement_start_date')
             end_date = fields.get('placement_end_date')
 
@@ -375,16 +375,16 @@ def create_app():
                 """
                 where_conditions.append(date_range_condition)
             elif start_date:
-                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_start_date,'{key_encrypt}'::text), 'MM/DD/YYYY') >= '{start_date}'::date)")
+                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_end_date, '{key_encrypt}'::text), 'MM/DD/YYYY') >= '{start_date}'::date)")
             elif end_date:
-                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_end_date,'{key_encrypt}'::text), 'MM/DD/YYYY') <= '{end_date}'::date)")
+                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_start_date, '{key_encrypt}'::text), 'MM/DD/YYYY') <= '{end_date}'::date)")
 
-            # Adding exit_date_val as AND condition because is not part of start or end date
+            # Adding exit_date_val as AND condition because is not part of start or end date.
             exit_date_val = fields.get('exit_date')
             if exit_date_val:
                 where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(exit_date,'{key_encrypt}'::text), 'MM/DD/YYYY') <= '{exit_date_val}'::date)")
 
-            # Build final query
+            # Build final query.
             query_all = query_base
             if where_conditions:
                 query_all += " WHERE " + " AND ".join(where_conditions)
