@@ -7,6 +7,7 @@ import Stack from '@mui/material/Stack';
 import getConfigData from "@/app/utils/getConfigs"
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
+import Link from '@mui/material/Link';
 
 export default function StudentRecordPage() {
   const { userSession } = useAuth();
@@ -65,6 +66,17 @@ export default function StudentRecordPage() {
 
   return (
     <>
+      <Box component={"div"} sx={{display: "flex", alignItems: "center"}}>
+        <Link href="/" underline="none" sx={{fontSize: "13px"}}>
+          Home
+        </Link>
+        <Box component={"span"} sx={{fontSize: "12px", margin: "0 4px"}}> / </Box>
+        <Link href="/student-records" underline="none" sx={{fontSize: "13px"}}>
+          Student Records
+        </Link>
+        <Box component={"span"} sx={{fontSize: "12px", margin: "0 4px"}}> / </Box>
+        <Box component={"span"} sx={{fontSize: "13px"}}> Student #{slug}</Box>
+      </Box>
       <h1>Student ID #: {slug}</h1>
       <Stack spacing={2} sx={{maxWidth: "768px"}}>
         {
