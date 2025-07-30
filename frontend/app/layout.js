@@ -34,10 +34,10 @@ export default function RootLayout({ children }) {
   const pathname = usePathname()
   const router = useRouter();
   const noSidebarPages = ['/login', '/forgot-password'].includes(pathname)
-  const pathElements = pathname.split('/').filter(segment => segment !== '');
-  const backUrl = pathElements[pathElements.length - 2] ?? '';
+  // Get the path elements and remove the last to get back url
+  const backUrl = pathname.split('/').filter(Boolean).slice(0, -1).pop() ?? '';
   const noBackBtn = ['/'].includes(pathname)
-  
+
   return (
     <html lang="en">
       <AppRouterCacheProvider>
