@@ -23,13 +23,13 @@ export default function MainMenu() {
   return (
     <Box
       sx={{
-        width: "60px",
+        width: "80px",
         backgroundColor: "primary.light",
       }}
     >
       {
         <Stack component={"nav"} alignItems="center" sx={{
-          '& a': { color: "primary.dark", padding: "18px"},
+          '& a': { color: "primary.dark", padding: "24px"},
           '& a:hover': { color: "#fff"},
           '& a.active': { borderLeft: "12px solid", borderColor: "primary.dark", color: "#fff", backgroundColor: "primary.main"}
         }}>
