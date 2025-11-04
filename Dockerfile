@@ -9,7 +9,7 @@ ARG PG_PORT
 
 # Install Postgres and supervisor
 RUN apt-get update && apt-get install -y \
-    postgresql-15 \
+    postgresql-17 \
     supervisor \
     && rm -rf /var/lib/apt/lists/*
 
@@ -71,13 +71,13 @@ EXPOSE 5000 $PG_PORT
 USER $PG_USER
 
 # Initialize the database cluster & create DB
-RUN /usr/lib/postgresql/15/bin/initdb -D /var/lib/postgresql/data
+RUN /usr/lib/postgresql/17/bin/initdb -D /var/lib/postgresql/data
 
 # Make sure these .sql files are in the same directory as your Dockerfile
 
 COPY backend/sql/ /scripts/
 
-RUN /usr/lib/postgresql/15/bin/pg_ctl \
+RUN /usr/lib/postgresql/17/bin/pg_ctl \
     -D /var/lib/postgresql/data \
     -o "-p $PG_PORT" \
     -l /var/lib/postgresql/data/logfile \
