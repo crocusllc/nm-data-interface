@@ -1,5 +1,5 @@
 # Use a lightweight Python base image
-FROM python:3.9-slim
+FROM python:3.9-slim-bookworm
 
 # Define arguments for the database
 ARG PG_USER
