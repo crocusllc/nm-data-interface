@@ -38,6 +38,7 @@ services:
       - ./frontend/public/docs:/tmp/csv
       - ./backend/sql:/tmp/sql
       - ./secret.key:/app/secret.key
+      - ./postgres:/var/lib/postgresql/data
     ports:
       - 5432:5432
       - 3030:5000

@@ -6,3 +6,6 @@ student_info.sql
 
 # IDE files
 .idea/
+
+# PostgreSQL data
+postgres/
