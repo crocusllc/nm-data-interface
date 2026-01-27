@@ -10,15 +10,23 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {useSystemMessage} from "@/app/utils/contexts/SystemMessage";
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
 import DatasetTable from "@/app/components/DatasetTable/DatasetTable";
-
-const getFullRecordLink = (rowData) => {
-  return <Box component={"a"} sx={{color: "primary.dark"}} href={`/student-records/${rowData.student_id}`} title="View student full record">View Full Record</Box>;
-};
+import {useFilterState} from "@/app/utils/hooks/useFilterState";
+import {useSearchParams} from "next/navigation";
 
 export default function StudentRecordsPage() {
   // Getting user session data.
   const [studentRecords, setStudentRecords] = useState();
   const [selectedRows, setSelectedRows] = useState([]);
+  const { filters, setFilters } = useFilterState();
+  const searchParams = useSearchParams();
+
+  const getFullRecordLink = (rowData) => {
+    const filterParams = searchParams.toString();
+    const href = filterParams
+      ? `/student-records/${rowData.student_id}?returnFilters=${encodeURIComponent(filterParams)}`
+      : `/student-records/${rowData.student_id}`;
+    return <Box component={"a"} sx={{color: "primary.dark"}} href={href} title="View student full record">View Full Record</Box>;
+  };
 
   let gridFields = [];
   let orderedGridColumn = []
@@ -154,6 +162,8 @@ export default function StudentRecordsPage() {
                 selectionFn={(e) => setSelectedRows(e.value)}
                 selectionHook={selectedRows}
                 configs={{sortField: "first_name", sortOrder: 1, selectionMode:'checkbox'}}
+                filters={filters}
+                onFilterChange={setFilters}
               />
             </Box>
           </>
