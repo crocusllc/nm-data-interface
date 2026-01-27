@@ -23,12 +23,12 @@ services:
     build:
       context: .
       args:
-        PG_USER: postgres
-        PG_PWD: postgres
-        PG_DB: ptt_db
-        PG_PORT: 5432
+        PG_USER: ${PG_USER:-postgres}
+        PG_PWD: ${PG_PASSWORD:-postgres}
+        PG_DB: ${PG_DB:-ptt_db}
+        PG_PORT: ${PG_PORT:-5432}
         PG_HOST: localhost
-        SECRET_KEY: SUPER_SECRET
+        SECRET_KEY: ${SECRET_KEY:-CHANGE_ME}
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./app.py:/app/app.py
