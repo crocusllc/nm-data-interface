@@ -67,32 +67,8 @@ RUN cp /tmp/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Expose the Flask port (5000) and Postgres port (5432)
 EXPOSE 5000 $PG_PORT
 
-# Switch to the postgres user to initialize the DB
-USER $PG_USER
-
-# Initialize the database cluster & create DB
-RUN /usr/lib/postgresql/17/bin/initdb -D /var/lib/postgresql/data
-
-# Make sure these .sql files are in the same directory as your Dockerfile
-
+# Copy SQL scripts for runtime initialization
 COPY backend/sql/ /scripts/
-
-RUN /usr/lib/postgresql/17/bin/pg_ctl \
-    -D /var/lib/postgresql/data \
-    -o "-p $PG_PORT" \
-    -l /var/lib/postgresql/data/logfile \
-    start \ 
-&& psql -U $PG_USER -p $PG_PORT -d postgres -c "CREATE DATABASE $PG_DB" \
-&& psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/users_ddl.sql \
-&& psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/logs_ddl.sql \
-&& psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/schools_districts.sql \
-&& psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/student_info.sql \
-&& psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/clinical_placements.sql \
-&& psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/program_info.sql \
-&& psql -U $PG_USER -p $PG_PORT -d $PG_DB -f /scripts/type_columns.sql
-
-# Switch back to root so supervisor can manage processes
-USER root
 
 # Command to start supervisor (which starts both Postgres and Flask)
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
