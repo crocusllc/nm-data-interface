@@ -16,6 +16,7 @@ import theme from "@/app/utils/theme";
 
 import { Inter, Rubik } from "next/font/google";
 import {SystemMessageProvider} from "@/app/utils/contexts/SystemMessage";
+import {IdleTimeoutProvider} from "@/app/utils/contexts/IdleTimeoutProvider";
 const inter = Inter({
   weight: ['300', '400', '500', '700'],
   subsets: ['latin'],
@@ -45,7 +46,8 @@ export default function RootLayout({ children }) {
           <CssBaseline />
           <SessionProvider>
             <AuthProvider>
-              <SystemMessageProvider>
+              <IdleTimeoutProvider>
+                <SystemMessageProvider>
                 <body className={`${inter.variable} ${rubik.variable}`}>
                   <Box sx={{
                     display: "grid",
@@ -76,6 +78,7 @@ export default function RootLayout({ children }) {
                   </Box>
                 </body>
               </SystemMessageProvider>
+              </IdleTimeoutProvider>
             </AuthProvider>
           </SessionProvider>
         </ThemeProvider>
