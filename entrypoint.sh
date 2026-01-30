@@ -35,34 +35,38 @@ cp /tmp/sql/type_columns.sql /scripts/type_columns.sql
 if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
   echo "Initializing new PostgreSQL database..."
   
-  # Initialize database cluster
-  /usr/lib/postgresql/17/bin/initdb -D /var/lib/postgresql/data
+  # Ensure proper ownership of data directory
+  chown -R postgres:postgres /var/lib/postgresql/data
+  
+  # Initialize database cluster as postgres user
+  su - postgres -c "/usr/lib/postgresql/15/bin/initdb -D /var/lib/postgresql/data"
   
   # Start PostgreSQL temporarily for setup
-  /usr/lib/postgresql/17/bin/pg_ctl -D /var/lib/postgresql/data \
-    -o "-p $POSTGRES_PORT" -l /var/lib/postgresql/data/logfile start
+  su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/data -o \"-p ${POSTGRES_PORT:-5432}\" -l /var/lib/postgresql/data/logfile start"
+  
+  # Wait for PostgreSQL to be ready
+  echo "Waiting for PostgreSQL to be ready..."
+  for i in {1..30}; do
+    if su - postgres -c "/usr/lib/postgresql/15/bin/pg_isready -p ${POSTGRES_PORT:-5432}" > /dev/null 2>&1; then
+      echo "PostgreSQL is ready."
+      break
+    fi
+    sleep 1
+  done
   
   # Create database and run DDL scripts
-  psql -U $POSTGRES_USER -p $POSTGRES_PORT -d postgres \
-    -c "CREATE DATABASE $POSTGRES_DB"
+  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d postgres -c \"CREATE DATABASE ${POSTGRES_DB:-ptt_db}\""
   
-  psql -U $POSTGRES_USER -p $POSTGRES_PORT -d $POSTGRES_DB \
-    -f /scripts/users_ddl.sql
-  psql -U $POSTGRES_USER -p $POSTGRES_PORT -d $POSTGRES_DB \
-    -f /scripts/logs_ddl.sql
-  psql -U $POSTGRES_USER -p $POSTGRES_PORT -d $POSTGRES_DB \
-    -f /scripts/schools_districts.sql
-  psql -U $POSTGRES_USER -p $POSTGRES_PORT -d $POSTGRES_DB \
-    -f /scripts/student_info.sql
-  psql -U $POSTGRES_USER -p $POSTGRES_PORT -d $POSTGRES_DB \
-    -f /scripts/clinical_placements.sql
-  psql -U $POSTGRES_USER -p $POSTGRES_PORT -d $POSTGRES_DB \
-    -f /scripts/program_info.sql
-  psql -U $POSTGRES_USER -p $POSTGRES_PORT -d $POSTGRES_DB \
-    -f /scripts/type_columns.sql
+  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/users_ddl.sql"
+  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/logs_ddl.sql"
+  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/schools_districts.sql"
+  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/student_info.sql"
+  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/clinical_placements.sql"
+  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/program_info.sql"
+  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/type_columns.sql"
   
   # Stop temporary PostgreSQL
-  /usr/lib/postgresql/17/bin/pg_ctl -D /var/lib/postgresql/data stop
+  su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/data stop"
   
   echo "Database initialization complete."
 else
