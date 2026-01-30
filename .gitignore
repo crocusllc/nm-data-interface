@@ -10,3 +10,5 @@ student_info.sql
 # Environment and secrets
 .env
 secret.key
+# PostgreSQL data
+postgres/
