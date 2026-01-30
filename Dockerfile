@@ -9,7 +9,7 @@ ARG PG_PORT
 
 # Install Postgres and supervisor
 RUN apt-get update && apt-get install -y \
-    postgresql-17 \
+    postgresql \
     supervisor \
     && rm -rf /var/lib/apt/lists/*
 
