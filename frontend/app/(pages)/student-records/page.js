@@ -1,7 +1,7 @@
 "use client"
 import Box from '@mui/material/Box';
 import getConfigData from "@/app/utils/getConfigs"
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, Suspense} from "react";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -10,15 +10,23 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {useSystemMessage} from "@/app/utils/contexts/SystemMessage";
 import {useHandleApiRequest} from "@/app/utils/hooks/useHandleApiRequest";
 import DatasetTable from "@/app/components/DatasetTable/DatasetTable";
+import {useFilterState} from "@/app/utils/hooks/useFilterState";
+import {useSearchParams} from "next/navigation";
 
-const getFullRecordLink = (rowData) => {
-  return <Box component={"a"} sx={{color: "primary.dark"}} href={`/student-records/${rowData.student_id}`} title="View student full record">View Full Record</Box>;
-};
-
-export default function StudentRecordsPage() {
+function StudentRecordsContent() {
   // Getting user session data.
   const [studentRecords, setStudentRecords] = useState();
   const [selectedRows, setSelectedRows] = useState([]);
+  const { filters, setFilters } = useFilterState();
+  const searchParams = useSearchParams();
+
+  const getFullRecordLink = (rowData) => {
+    const filterParams = searchParams.toString();
+    const href = filterParams
+      ? `/student-records/${rowData.student_id}?returnFilters=${encodeURIComponent(filterParams)}`
+      : `/student-records/${rowData.student_id}`;
+    return <Box component={"a"} sx={{color: "primary.dark"}} href={href} title="View student full record">View Full Record</Box>;
+  };
 
   let gridFields = [];
   let orderedGridColumn = []
@@ -154,12 +162,22 @@ export default function StudentRecordsPage() {
                 selectionFn={(e) => setSelectedRows(e.value)}
                 selectionHook={selectedRows}
                 configs={{sortField: "first_name", sortOrder: 1, selectionMode:'checkbox'}}
+                filters={filters}
+                onFilterChange={setFilters}
               />
             </Box>
           </>
         )
       }
     </>
+  );
+}
+
+export default function StudentRecordsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <StudentRecordsContent />
+    </Suspense>
   );
 }
 
