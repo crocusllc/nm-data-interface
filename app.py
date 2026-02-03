@@ -231,6 +231,55 @@ def create_app():
 
         return jsonify({"message": f"The username {user} set the password successfully!"})
 
+    # ========== RESET USER PASSWORD ENDPOINT (Admin) ==========
+    @app.route("/reset_user_password", methods=["POST"])
+    @login_required(role_required=["administrator"])
+    def reset_user_password():
+        """
+        Administrator endpoint to reset another user's password.
+        Sets new_password flag to TRUE to force password change on next login.
+        """
+        data = request.get_json() or {}
+        username = data.get("username")
+        new_password = data.get("new_password")
+
+        if not username or not new_password:
+            return jsonify({"error": "Missing required fields: username, new_password"}), 400
+
+        if len(new_password) < 8:
+            return jsonify({"error": "Password must be at least 8 characters"}), 400
+
+        conn = create_conn()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # Check if user exists
+        cur.execute("SELECT user_id FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+
+        if user is None:
+            cur.close()
+            conn.close()
+            return jsonify({"error": f"User '{username}' not found"}), 404
+
+        # Hash the new password
+        password_bytes = new_password.encode("utf-8")
+        password_hash = bcrypt.hash(password_bytes)
+
+        # Update password and set new_password flag
+        cur.execute("""
+            UPDATE users
+            SET password_hash = %s, new_password = TRUE
+            WHERE username = %s
+        """, (password_hash, username))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "message": f"Password for user '{username}' has been reset successfully. User will be prompted to change password on next login."
+        })
+
     # ========== FILE UPLOAD ENDPOINT ==========
     @app.route("/file_upload", methods=["POST"])
     @login_required(role_required=["administrator"])
