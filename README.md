@@ -217,6 +217,18 @@ curl -X POST <YOUR_API_URL>/db/delete_user -H 'Authorization: Bearer <YOUR_USER_
 
 ```
 
+To reset a user's password (Administrator only), use the following cURL call:
+
+```
+curl -X POST <YOUR_API_URL>/reset_user_password -H 'Authorization: Bearer <YOUR_USER_TOKEN>'
+     -H "Content-Type: application/json"      -d '{
+                                   "username": "<USER_NAME>",
+                                   "new_password": "<NEW_PASSWORD>"
+                                 }'
+```
+
+Note: The password must be at least 8 characters long. The user will be prompted to change their password on their next login.
+
 ## Contributing
 
 Contributions are welcome! Please fork the repository and create a pull request
