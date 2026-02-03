@@ -1,7 +1,7 @@
 "use client"
 import Box from '@mui/material/Box';
 import getConfigData from "@/app/utils/getConfigs"
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, Suspense} from "react";
 import {useAuth} from "@/app/utils/contexts/AuthProvider";
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -13,7 +13,7 @@ import DatasetTable from "@/app/components/DatasetTable/DatasetTable";
 import {useFilterState} from "@/app/utils/hooks/useFilterState";
 import {useSearchParams} from "next/navigation";
 
-export default function StudentRecordsPage() {
+function StudentRecordsContent() {
   // Getting user session data.
   const [studentRecords, setStudentRecords] = useState();
   const [selectedRows, setSelectedRows] = useState([]);
@@ -170,6 +170,14 @@ export default function StudentRecordsPage() {
         )
       }
     </>
+  );
+}
+
+export default function StudentRecordsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <StudentRecordsContent />
+    </Suspense>
   );
 }
 
