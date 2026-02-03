@@ -1,0 +1,55 @@
+#!/bin/bash
+# Safely update PTT application while preserving data
+
+set -e
+
+echo "========================================="
+echo "PTT Application Update Script"
+echo "========================================="
+
+# Step 1: Create backup
+echo ""
+echo "Step 1: Creating database backup..."
+./scripts/backup-db.sh ./backups
+BACKUP_FILE=$(ls -t ./backups/ptt_backup_*.sql | head -1)
+echo "Backup saved to: $BACKUP_FILE"
+
+# Step 2: Pull latest code
+echo ""
+echo "Step 2: Pulling latest code..."
+git fetch origin
+git pull origin field-test1
+
+# Step 3: Rebuild containers (data preserved via volume)
+echo ""
+echo "Step 3: Rebuilding application..."
+docker compose down
+docker compose up -d --build
+
+# Step 4: Run any post-deployment commands
+echo ""
+echo "Step 4: Running post-deployment configuration..."
+sleep 10  # Wait for services to start
+docker compose exec api python3 /tmp/read_config.py --mode key \
+  --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
+docker compose exec api python3 /tmp/read_config.py --mode app \
+  --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
+
+# Step 5: Verify
+echo ""
+echo "Step 5: Verifying deployment..."
+sleep 5
+if docker compose ps | grep -q "Up"; then
+  echo "✓ Containers are running"
+else
+  echo "✗ Container startup issue detected"
+  echo "Rolling back..."
+  ./scripts/restore-db.sh "$BACKUP_FILE"
+  exit 1
+fi
+
+echo ""
+echo "========================================="
+echo "Update complete!"
+echo "Backup available at: $BACKUP_FILE"
+echo "========================================="
