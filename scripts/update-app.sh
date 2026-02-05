@@ -18,7 +18,7 @@ echo "Backup saved to: $BACKUP_FILE"
 echo ""
 echo "Step 2: Pulling latest code..."
 git fetch origin
-git pull origin field-test1
+git pull
 
 # Step 3: Rebuild containers (data preserved via volume)
 echo ""
@@ -43,8 +43,8 @@ if docker compose ps | grep -q "Up"; then
   echo "✓ Containers are running"
 else
   echo "✗ Container startup issue detected"
-  echo "Rolling back..."
-  ./scripts/restore-db.sh "$BACKUP_FILE"
+  echo "Rolling back database from backup..."
+  ./scripts/restore-db.sh "$BACKUP_FILE" --yes
   exit 1
 fi
 
