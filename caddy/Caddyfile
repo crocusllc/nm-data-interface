@@ -1,13 +1,3 @@
-{
-    # Global options block. Entirely optional, https is on by default
-    # Optional email key for lets encrypt
-
-    email youremail@domain.com 
-    
-    # Optional staging lets encrypt for testing. Comment out for production.
-    # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
-}
-
 (cors) {
     @cors_preflight method OPTIONS
     @cors header Origin {args.0}
@@ -26,12 +16,12 @@
     }
 }
 
-localhost:443 {
-    import cors localhost:443
+{$DOMAIN} {
+    import cors {$DOMAIN}
 
-    tls internal {
-		  on_demand
-	  }
+    # TLS_MODE=internal for self-signed (dev)
+    # TLS_MODE=you@example.com for Let's Encrypt (prod)
+    tls {$TLS_MODE}
 
     handle_path /db/* {
         reverse_proxy api:5000

@@ -226,15 +226,13 @@ def main():
         with open(args.template, "r", encoding="utf-8") as f:
             template_str = f.read()
 
-        compose_file = parse_yaml('/tmp/docker-compose.yml')
-        file_args = compose_file[0]['services']['api']['build']['args']
-
-        pguser=file_args['PG_USER']
-        pgdb=file_args['PG_DB']
-        pgpwd=file_args['PG_PWD']
-        pgport=file_args['PG_PORT']
-        pghost=file_args['PG_HOST']
-        secretkey=file_args['SECRET_KEY']
+        # Get database config from environment variables (set by Docker ARGs)
+        pguser = os.environ.get('PG_USER', 'postgres')
+        pgdb = os.environ.get('PG_DB', 'ptt_db')
+        pgpwd = os.environ.get('PG_PWD', 'postgres')
+        pgport = os.environ.get('PG_PORT', '5432')
+        pghost = os.environ.get('PG_HOST', 'localhost')
+        secretkey = os.environ.get('SECRET_KEY', 'CHANGE_ME')
 
         # 3. Render the template
         jinja_env = jinja2.Environment()
