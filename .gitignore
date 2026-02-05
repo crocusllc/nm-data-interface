@@ -12,4 +12,3 @@ student_info.sql
 secret.key
 # PostgreSQL data
 postgres/
-
