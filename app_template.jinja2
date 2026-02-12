@@ -286,13 +286,22 @@ def create_app():
     def file_upload():
         key_encrypt = load_key()
 
-        data = request.get_data()
-        json_str = data.decode('utf-8')
-        json_objs = json_str.split('\n')
+        # Handle multipart form data - metadata comes as a JSON blob in "data" field
+        metadata = None
+        if 'data' in request.files:
+            data_blob = request.files['data']
+            metadata = json.loads(data_blob.read().decode('utf-8'))
+        else:
+            # Fallback: try parsing raw data for backwards compatibility
+            data = request.get_data()
+            json_str = data.decode('utf-8')
+            json_objs = json_str.split('\n')
+            for obj in json_objs:
+                if is_json(obj):
+                    metadata = json.loads(obj)
 
-        for obj in json_objs:
-            if is_json(obj):
-                metadata = json.loads(obj)
+        if not metadata:
+            return jsonify({"error": "Missing metadata"}), 400
 
         if (metadata):
             file_name = metadata["file_name"]

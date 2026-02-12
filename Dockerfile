@@ -6,6 +6,16 @@ ARG PG_USER
 ARG PG_PWD
 ARG PG_DB
 ARG PG_PORT
+ARG PG_HOST=localhost
+ARG SECRET_KEY
+
+# Set environment variables from build args (needed for read_config.py)
+ENV PG_USER=$PG_USER
+ENV PG_PWD=$PG_PWD
+ENV PG_DB=$PG_DB
+ENV PG_PORT=$PG_PORT
+ENV PG_HOST=$PG_HOST
+ENV SECRET_KEY=$SECRET_KEY
 
 # Install Postgres and supervisor
 RUN apt-get update && apt-get install -y \
@@ -51,7 +61,7 @@ RUN cp /tmp/sql/type_columns.sql /scripts/type_columns.sql
 # Copy your application code into /app
 WORKDIR /app
 
-# Set environment variables for Postgres
+# Set environment variables for Postgres (used by entrypoint.sh)
 ENV POSTGRES_USER=$PG_USER
 ENV POSTGRES_PASSWORD=$PG_PWD
 ENV POSTGRES_DB=$PG_DB
