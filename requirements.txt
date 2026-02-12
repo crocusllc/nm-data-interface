@@ -7,3 +7,4 @@ passlib
 pyYAML
 cryptography
 flask-cors
+gunicorn

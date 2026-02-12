@@ -30,7 +30,9 @@ services:
         PG_DB: ${PG_DB:-ptt_db}
         PG_PORT: ${PG_PORT:-5432}
         PG_HOST: localhost
-        SECRET_KEY: ${SECRET_KEY:-CHANGE_ME}
+        SECRET_KEY: SUPER_SECRET
+    restart: unless-stopped
+    command: gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 app:app
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./app.py:/app/app.py
@@ -45,16 +47,16 @@ services:
     networks:
       - internal
     healthcheck:
-      test: [ "CMD-SHELL", "test -f /tmp/csv/clinical_placement_data.csv && test -f /tmp/csv/additional_program_student_data.csv && test -f /tmp/csv/student_data.csv" ]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
   app:
     build: 
       context: ./
       dockerfile: ./frontend/Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: https://${DOMAIN}/db
+    restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
@@ -72,4 +74,10 @@ services:
       - ./frontend/public/docs:/app/public/docs
     networks:
       - internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
