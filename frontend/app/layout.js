@@ -2,20 +2,19 @@
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import Header from "@/app/components/Header/Header";
 import MainMenu from "@/app/components/MainMenu/MainMenu";
+import BackButton from "@/app/components/BackButton/BackButton";
 import Box from "@mui/material/Box";
-import {usePathname, useRouter} from 'next/navigation'
+import {usePathname} from 'next/navigation'
 import {Container} from "@mui/material";
 import {SessionProvider} from "next-auth/react";
 import {AuthProvider} from "@/app/utils/contexts/AuthProvider";
-import Link from '@mui/material/Link';
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import Button from '@mui/material/Button';
 
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import theme from "@/app/utils/theme";
 
 import { Inter, Rubik } from "next/font/google";
 import {SystemMessageProvider} from "@/app/utils/contexts/SystemMessage";
+import {IdleTimeoutProvider} from "@/app/utils/contexts/IdleTimeoutProvider";
 const inter = Inter({
   weight: ['300', '400', '500', '700'],
   subsets: ['latin'],
@@ -32,11 +31,7 @@ const rubik = Rubik({
 
 export default function RootLayout({ children }) {
   const pathname = usePathname()
-  const router = useRouter();
   const noSidebarPages = ['/login', '/forgot-password'].includes(pathname)
-  // Get the path elements and remove the last to get back url
-  const backUrl = pathname.split('/').filter(Boolean).slice(0, -1).pop() ?? '';
-  const noBackBtn = ['/'].includes(pathname)
 
   return (
     <html lang="en">
@@ -45,7 +40,8 @@ export default function RootLayout({ children }) {
           <CssBaseline />
           <SessionProvider>
             <AuthProvider>
-              <SystemMessageProvider>
+              <IdleTimeoutProvider>
+                <SystemMessageProvider>
                 <body className={`${inter.variable} ${rubik.variable}`}>
                   <Box sx={{
                     display: "grid",
@@ -58,14 +54,7 @@ export default function RootLayout({ children }) {
                     {
                       !noSidebarPages && (
                         <Box component={"aside"} sx={{gridColumn: "1 / 2"}}>
-                          {
-                            (!noBackBtn) && (
-                              <Link href={`/${backUrl}`} underline="none" sx={{display: "flex", alignItems: "center", margin: "0 10px 20px"}}>
-                                <ArrowBackIosIcon fontSize={"small"}/>
-                                <Box component={"span"} sx={{marginLeft: "-2px"}}>Back</Box>
-                              </Link>
-                            )
-                          }
+                          <BackButton />
                           <MainMenu/>
                         </Box>
                       )
@@ -76,6 +65,7 @@ export default function RootLayout({ children }) {
                   </Box>
                 </body>
               </SystemMessageProvider>
+              </IdleTimeoutProvider>
             </AuthProvider>
           </SessionProvider>
         </ThemeProvider>

@@ -7,5 +7,8 @@ student_info.sql
 # IDE files
 .idea/
 
+# Environment and secrets
+.env
+secret.key
 # PostgreSQL data
 postgres/
