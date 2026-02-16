@@ -26,19 +26,10 @@ echo "Step 3: Rebuilding application..."
 docker compose down
 docker compose up -d --build
 
-# Step 4: Run any post-deployment commands
+# Step 4: Verify
 echo ""
-echo "Step 4: Running post-deployment configuration..."
-sleep 10  # Wait for services to start
-docker compose exec api python3 /tmp/read_config.py --mode key \
-  --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
-docker compose exec api python3 /tmp/read_config.py --mode app \
-  --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
-
-# Step 5: Verify
-echo ""
-echo "Step 5: Verifying deployment..."
-sleep 5
+echo "Step 4: Verifying deployment..."
+sleep 15  # Wait for services to start
 if docker compose ps | grep -q "Up"; then
   echo "✓ Containers are running"
 else
