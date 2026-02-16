@@ -29,7 +29,7 @@ def is_json(str):
 def get_header_data(headers, key):
   auth_header = headers.get('Authorization', None)
   token = auth_header.split(" ")[1]
-  decoded = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+  decoded = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
   data = decoded.get(key)
 
   return data

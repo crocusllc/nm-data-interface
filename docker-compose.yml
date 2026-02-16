@@ -30,9 +30,9 @@ services:
         PG_DB: ${PG_DB:-ptt_db}
         PG_PORT: ${PG_PORT:-5432}
         PG_HOST: localhost
-        SECRET_KEY: SUPER_SECRET
+        SECRET_KEY: ${SECRET_KEY}
     restart: unless-stopped
-    command: gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 app:app
+    command: /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./app.py:/app/app.py
@@ -47,15 +47,17 @@ services:
     networks:
       - internal
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:5000/\")' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
   app:
-    build: 
+    build:
       context: ./
       dockerfile: ./frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://${DOMAIN}/db
     restart: unless-stopped
     depends_on:
       api:
@@ -75,7 +77,7 @@ services:
     networks:
       - internal
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
