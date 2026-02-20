@@ -94,64 +94,46 @@ project-root/
 
 ## Getting Started
 
-To set up and run the application locally, follow these steps:
-
-    Clone the Repository:
-
-```
+```bash
 git clone https://www.indava.dev/indava-people/ptt.git
 cd ptt
+cp .env.example .env
+# Edit .env, then:
+./deploy.sh
 ```
 
 ## Configuration
 
-The config.yaml file defines the application's behavior and structure. Modifying this file allows you to update routes, data models, and other settings without changing the core codebase. Ensure that any changes to config.yaml are followed by rebuilding the Docker image to apply the updates.
+The config.yaml file defines the application's behavior and structure. Modifying this file allows you to update routes, data models, and other settings without changing the core codebase.
 
-1. Prepare the docker-compose.yml file with the ports and database configs
-2. Edit the fields you want to show in the student information form
-3. Create the networks
+### Deployment (4 steps)
 
-```
-    docker network create web
-    docker network create --internal caddy_internal
-```
+1. **Copy and configure environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your domain, generate secure PG_PASSWORD, SECRET_KEY, AUTH_SECRET
+   # Generate secrets: openssl rand -base64 32
+   ```
 
-4. Create the networks
+2. **Edit config.yaml** – Fields for the student information form, etc.
 
-```
-    docker-compose up -d
-```
+3. **Deploy**
+   ```bash
+   ./deploy.sh
+   ```
 
-    This command will build the Docker image and start the application along with the PostgreSQL database.
+4. **Access** – https://localhost (or your DOMAIN)
 
-    Access the Application:
+Networks are created automatically by Docker Compose. The container entrypoint runs read_config.py (key, csv, db, app) at startup—no manual exec commands needed.
 
-    Open your browser and navigate to https://localhost to access the frontend.
+### Manual read_config.py (advanced)
 
-### Update the app.py
+Only if you change config.yaml while the container is running and need to regenerate without a full restart:
 
-To update the app.py execute:
-
-```
-    docker compose exec api python3 /tmp/read_config.py --mode key --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
-
-    docker compose exec api python3 /tmp/read_config.py --mode app --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
-```
-
-### Update sql scripts
-
-Execute:
-
-```
-    docker compose exec api python3 /tmp/read_config.py --mode db --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
-```
-
-### Create csv templates
-
-Execute:
-
-```
-    docker compose exec api python3 /tmp/read_config.py --mode csv --config /tmp/config.yaml --template /tmp/app_template.jinja2 --output app.py
+```bash
+docker compose exec api python3 /tmp/read_config.py --mode key --config /app/config.yaml --template /tmp/app_template.jinja2 --output /app/app.py
+docker compose exec api python3 /tmp/read_config.py --mode app --config /app/config.yaml --template /tmp/app_template.jinja2 --output /app/app.py
+# For SQL or CSV changes: --mode db or --mode csv
 ```
 
 ## Usage
@@ -166,21 +148,7 @@ Execute:
 
 ## Enabling HTTPS
 
-Caddy is used to enable https in the local environment. It also facilitates deployment to production.
-
-To deploy the aplication to a custom domain.
-
-1. Change the example email to an email address for your ACME account
-2. Change `localhost:443` to your custom domain.
-3. Delete the following block
-
-```
-    tls internal {
-        on_demand
-    }
-```
-
-Caddy automatically handles HTTPS because you've provided a domain name.
+Caddy handles TLS via .env: `TLS_MODE=internal` (self-signed, dev) or `TLS_MODE=you@example.com` (Let's Encrypt, production). Set `DOMAIN` to your custom domain for production.
 
 ## Creating and Deleting users
 

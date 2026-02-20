@@ -12,8 +12,8 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      - DOMAIN=${DOMAIN:-localhost}
-      - TLS_MODE=${TLS_MODE:-internal}
+      - DOMAIN=${DOMAIN}
+      - TLS_MODE=${TLS_MODE}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile
       - ./caddy/data:/data # Optional
@@ -25,10 +25,10 @@ services:
     build:
       context: .
       args:
-        PG_USER: ${PG_USER:-postgres}
-        PG_PWD: ${PG_PASSWORD:-postgres}
-        PG_DB: ${PG_DB:-ptt_db}
-        PG_PORT: ${PG_PORT:-5432}
+        PG_USER: ${PG_USER}
+        PG_PWD: ${PG_PASSWORD}
+        PG_DB: ${PG_DB}
+        PG_PORT: ${PG_PORT}
         PG_HOST: localhost
         SECRET_KEY: ${SECRET_KEY}
     restart: unless-stopped
