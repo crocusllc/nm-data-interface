@@ -13,7 +13,8 @@ docker compose exec -T api pg_dump -U postgres -d ptt_db --clean --if-exists > "
 if [ $? -eq 0 ]; then
   echo "Backup created: $BACKUP_FILE"
   # Keep only last 5 backups
-  ls -t "$BACKUP_DIR"/ptt_backup_*.sql | tail -n +6 | xargs -r rm
+  # Portable: omit -r (GNU-only); BSD xargs doesn't run on empty input
+  ls -t "$BACKUP_DIR"/ptt_backup_*.sql 2>/dev/null | tail -n +6 | xargs rm 2>/dev/null || true
 else
   echo "Backup failed!"
   exit 1
