@@ -44,3 +44,11 @@ echo "========================================="
 echo "Update complete!"
 echo "Backup available at: $BACKUP_FILE"
 echo "========================================="
+
+# Check if auto-start on boot is configured
+if ! systemctl is-enabled ptt-autostart.service &>/dev/null; then
+    echo ""
+    echo "NOTE: Auto-start on boot is not enabled."
+    echo "  To start containers automatically after a server reboot, run:"
+    echo "  sudo ./scripts/install-autostart.sh"
+fi
