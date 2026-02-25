@@ -3,6 +3,7 @@ clinical_placements.sql
 frontend/public/docs
 program_info.sql
 student_info.sql
+type_columns.sql
 
 # IDE files
 .idea/
