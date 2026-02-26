@@ -3,6 +3,7 @@ clinical_placements.sql
 frontend/public/docs
 program_info.sql
 student_info.sql
+type_columns.sql
 
 # IDE files
 .idea/
@@ -12,3 +13,6 @@ student_info.sql
 secret.key
 # PostgreSQL data
 postgres/
+
+# Backups
+backups/

@@ -124,6 +124,12 @@ The config.yaml file defines the application's behavior and structure. Modifying
 
 4. **Access** – https://localhost (or your DOMAIN)
 
+5. **Enable auto-start on boot** (production servers)
+   ```bash
+   sudo ./scripts/install-autostart.sh
+   ```
+   This installs a systemd service so containers start automatically after a server reboot.
+
 Networks are created automatically by Docker Compose. The container entrypoint runs read_config.py (key, csv, db, app) at startup—no manual exec commands needed.
 
 ### Manual read_config.py (advanced)
