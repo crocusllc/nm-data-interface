@@ -25,12 +25,8 @@ services:
     build:
       context: .
       args:
-        PG_USER: ${PG_USER}
-        PG_PWD: ${PG_PASSWORD}
-        PG_DB: ${PG_DB}
         PG_PORT: ${PG_PORT}
         PG_HOST: localhost
-        SECRET_KEY: ${SECRET_KEY}
     restart: unless-stopped
     command: /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
     volumes:
@@ -48,6 +44,7 @@ services:
       - PG_PORT=${PG_PORT}
       - PG_HOST=localhost
       - SECRET_KEY=${SECRET_KEY}
+      - CORS_ORIGIN=https://${DOMAIN}
     ports:
       - 127.0.0.1:3030:5000
     networks:

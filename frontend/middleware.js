@@ -14,6 +14,7 @@ export default auth((req) => {
 
     // Viewer disallowed paths.
     const notAllowedPaths = {
+      superadmin: [],
       administrator: [],
       editor: ['/data-download', '/data-upload'],
       viewer: ['/data-download', '/data-upload'],

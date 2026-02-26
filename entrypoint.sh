@@ -25,6 +25,9 @@ echo "Generating app file..."
 python3 /tmp/read_config.py --mode app --config /app/config.yaml --template /tmp/app_template.jinja2 --output /app/app.py
 echo "App file generation complete."
 
+# Set ownership of /app for non-root gunicorn user
+chown -R appuser:appuser /app
+
 # Move scripts
 cp /tmp/sql/student_info.sql /scripts/student_info.sql
 cp /tmp/sql/clinical_placements.sql /scripts/clinical_placements.sql
@@ -42,12 +45,12 @@ if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
   su - postgres -c "/usr/lib/postgresql/15/bin/initdb -D /var/lib/postgresql/data"
   
   # Start PostgreSQL temporarily for setup
-  su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/data -o \"-p ${POSTGRES_PORT:-5432}\" -l /var/lib/postgresql/data/logfile start"
+  su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/data -o \"-p ${PG_PORT:-5432}\" -l /var/lib/postgresql/data/logfile start"
   
   # Wait for PostgreSQL to be ready
   echo "Waiting for PostgreSQL to be ready..."
   for i in {1..30}; do
-    if su - postgres -c "/usr/lib/postgresql/15/bin/pg_isready -p ${POSTGRES_PORT:-5432}" > /dev/null 2>&1; then
+    if su - postgres -c "/usr/lib/postgresql/15/bin/pg_isready -p ${PG_PORT:-5432}" > /dev/null 2>&1; then
       echo "PostgreSQL is ready."
       break
     fi
@@ -55,15 +58,15 @@ if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
   done
   
   # Create database and run DDL scripts
-  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d postgres -c \"CREATE DATABASE ${POSTGRES_DB:-ptt_db}\""
+  su - postgres -c "psql -p ${PG_PORT:-5432} -d postgres -c \"CREATE DATABASE ${PG_DB:-ptt_db}\""
   
-  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/users_ddl.sql"
-  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/logs_ddl.sql"
-  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/schools_districts.sql"
-  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/student_info.sql"
-  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/clinical_placements.sql"
-  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/program_info.sql"
-  su - postgres -c "psql -p ${POSTGRES_PORT:-5432} -d ${POSTGRES_DB:-ptt_db} -f /scripts/type_columns.sql"
+  su - postgres -c "psql -p ${PG_PORT:-5432} -d ${PG_DB:-ptt_db} -f /scripts/users_ddl.sql"
+  su - postgres -c "psql -p ${PG_PORT:-5432} -d ${PG_DB:-ptt_db} -f /scripts/logs_ddl.sql"
+  su - postgres -c "psql -p ${PG_PORT:-5432} -d ${PG_DB:-ptt_db} -f /scripts/schools_districts.sql"
+  su - postgres -c "psql -p ${PG_PORT:-5432} -d ${PG_DB:-ptt_db} -f /scripts/student_info.sql"
+  su - postgres -c "psql -p ${PG_PORT:-5432} -d ${PG_DB:-ptt_db} -f /scripts/clinical_placements.sql"
+  su - postgres -c "psql -p ${PG_PORT:-5432} -d ${PG_DB:-ptt_db} -f /scripts/program_info.sql"
+  su - postgres -c "psql -p ${PG_PORT:-5432} -d ${PG_DB:-ptt_db} -f /scripts/type_columns.sql"
   
   # Stop temporary PostgreSQL
   su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/data stop"

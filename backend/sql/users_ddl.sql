@@ -4,10 +4,11 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     user_email VARCHAR(100) UNIQUE NOT NULL,
     password_expiration_date DATE NOT NULL,
-    user_role VARCHAR(20) CHECK (user_role IN ('administrator', 'editor', 'viewer')) NOT NULL,
+    user_role VARCHAR(20) CHECK (user_role IN ('superadmin', 'administrator', 'editor', 'viewer')) NOT NULL,
     new_password BOOLEAN NULL DEFAULT TRUE
 );
 
+-- Seed users: new_password=TRUE forces password change on first login
 INSERT INTO users (
     user_id,
     username,
@@ -19,7 +20,7 @@ INSERT INTO users (
 ) VALUES (
    1,
    'admin',
-    '$2a$10$HJn5BCRhYWBDi6NCqznwdOtm24BllSJNPPkks378JtX800WkWV142',
+    '$2b$10$zCd0QTqvKv8OGWJMbYW4kO7WwCmVuZI6jaH3YfQv8CxeJQqEjSqWu',
     'admin@example.com',
     '2099-12-31',
     'administrator',
@@ -37,7 +38,7 @@ INSERT INTO users (
 ) VALUES (
    2,
    'editor',
-    '$2a$10$HJn5BCRhYWBDi6NCqznwdOtm24BllSJNPPkks378JtX800WkWV142',
+    '$2b$10$ARSjriaaaMGSnz1UfQHTHedKIBbfIdYm7RmWhlCxl92PwyEJZuh1W',
     'editor@example.com',
     '2099-12-31',
     'editor',
@@ -55,7 +56,7 @@ INSERT INTO users (
 ) VALUES (
    3,
    'viewer',
-    '$2a$10$HJn5BCRhYWBDi6NCqznwdOtm24BllSJNPPkks378JtX800WkWV142',
+    '$2b$10$SFoecHZ.rhZaHG/L4Kww1usYl6QXz7VrfTMehEfI1XVzPGUnPZLjO',
     'viewer@example.com',
     '2099-12-31',
     'viewer',
