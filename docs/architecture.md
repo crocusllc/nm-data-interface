@@ -36,7 +36,8 @@ ptt/
 │   ├── restore-db.sh           # Database restore
 │   ├── update-app.sh           # Automated update with rollback
 │   ├── install-autostart.sh    # systemd service installer
-│   └── ptt-autostart.service   # systemd unit file
+│   ├── ptt-autostart.service   # systemd unit file
+│   └── qa_security_tests.sh    # Automated security QA test suite
 ├── config.yaml                 # Application configuration (theme, categories, fields)
 ├── read_config.py              # Config parser — generates app.py, SQL, CSV templates
 ├── app_template.jinja2         # Jinja2 template for generating app.py
@@ -86,7 +87,7 @@ ptt/
 | Service | Image / Build | Ports | Role |
 |---------|--------------|-------|------|
 | `caddy` | `caddy:alpine` | 80, 443 | Reverse proxy, TLS termination, CORS |
-| `api` | Built from `./Dockerfile` | 5000 (internal), 5432 (PostgreSQL) | Flask API + PostgreSQL (via supervisord) |
+| `api` | Built from `./Dockerfile` | 5000 (internal only) | Flask API + PostgreSQL (via supervisord) |
 | `app` | Built from `./frontend/Dockerfile` | 3000 (internal) | Next.js frontend |
 
 ### Networks

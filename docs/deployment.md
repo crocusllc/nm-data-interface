@@ -22,7 +22,8 @@ docker compose version
 
 - Instance type: `t3.medium` (2 vCPU, 4 GB RAM) or larger
 - Storage: 20 GB+ EBS
-- Security group: open ports **80** (HTTP), **443** (HTTPS), and **22** (SSH)
+- Security group: open ports **80** (HTTP), **443** (HTTPS), and **22** (SSH).
+  The API port (3030) is bound to `127.0.0.1` and should **not** be exposed externally.
 
 Windows and Azure deployments are not covered here. The application relies on
 Docker Compose and should run on any platform that supports it, but only Linux
