@@ -8,6 +8,9 @@ const fileContents = fs.readFileSync(filePath, "utf8");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  images: {
+    unoptimized: true,
+  },
   env: {
     CONFIG_DATA: fileContents, // Pass the config object as a JSON string
   },

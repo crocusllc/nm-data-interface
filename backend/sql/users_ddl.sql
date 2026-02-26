@@ -20,7 +20,7 @@ INSERT INTO users (
 ) VALUES (
    1,
    'admin',
-    '$2b$10$zCd0QTqvKv8OGWJMbYW4kO7WwCmVuZI6jaH3YfQv8CxeJQqEjSqWu',
+    '$2b$12$8bDB3fDJZI8N63MFeOmqReu7CG2rETZQBP3Q.5.pmtpYGgm4ZiknW',
     'admin@example.com',
     '2099-12-31',
     'administrator',
@@ -38,7 +38,7 @@ INSERT INTO users (
 ) VALUES (
    2,
    'editor',
-    '$2b$10$ARSjriaaaMGSnz1UfQHTHedKIBbfIdYm7RmWhlCxl92PwyEJZuh1W',
+    '$2b$12$8bDB3fDJZI8N63MFeOmqReu7CG2rETZQBP3Q.5.pmtpYGgm4ZiknW',
     'editor@example.com',
     '2099-12-31',
     'editor',
@@ -56,7 +56,7 @@ INSERT INTO users (
 ) VALUES (
    3,
    'viewer',
-    '$2b$10$SFoecHZ.rhZaHG/L4Kww1usYl6QXz7VrfTMehEfI1XVzPGUnPZLjO',
+    '$2b$12$8bDB3fDJZI8N63MFeOmqReu7CG2rETZQBP3Q.5.pmtpYGgm4ZiknW',
     'viewer@example.com',
     '2099-12-31',
     'viewer',
