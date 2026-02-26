@@ -124,7 +124,7 @@ def create_app():
 
     # ========== LOGIN ENDPOINT ==========
     @app.route("/login", methods=["POST"])
-    @limiter.limit("10 per minute")
+    @limiter.limit("20 per minute")
     def login():
         data = request.get_json() or {}
         username = data.get("username")
@@ -581,9 +581,16 @@ def create_app():
 
         if (data != {}):
             if 'table_name' in data and 'id' in data:
-                record_id = int(data.get("id"))
+                try:
+                    record_id = int(data.get("id"))
+                except (ValueError, TypeError):
+                    return jsonify({"error": "Invalid id"}), 400
+
                 table = data.get("table_name")
-                validate_table(table)
+                try:
+                    validate_table(table)
+                except ValueError as e:
+                    return jsonify({"error": str(e)}), 400
 
                 user_id = get_header_data(request.headers, 'id')
 
@@ -608,7 +615,7 @@ def create_app():
                 return jsonify({"message": f"The record with ID {record_id} was delete successfully."})
             else:
                 return jsonify({"message": f"Missing student_id."})
-        
+
         return jsonify({"message": f"Missing params."})
 
     # ========== DELETE STUDENT ENDPOINT ==========
@@ -955,9 +962,14 @@ def create_app():
 
         if request.method == 'POST':
             data = request.get_json() or {}
-        
+
             if (data != {}):
-                student_id = data.get("student_id")
+                try:
+                    student_id = int(data.get("student_id"))
+                except (ValueError, TypeError):
+                    cur.close()
+                    conn.close()
+                    return jsonify({"error": "Invalid student_id"}), 400
 
                 cur.execute("SELECT * from student_info where student_id=%s;", (student_id,))
                 result = cur.fetchone()
