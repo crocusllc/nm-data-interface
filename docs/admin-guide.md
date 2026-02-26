@@ -4,29 +4,19 @@
 
 On a fresh install, one built-in account exists:
 
-| Username | Password | Role |
-|----------|----------|------|
-| `superadmin` | `changeme` | superadmin |
+| Username | Role | First login |
+|----------|------|-------------|
+| `admin` | administrator | You will be prompted to set a new password |
 
 **First steps after deployment:**
 
-1. Log in as `superadmin`.
-2. Change the default password immediately.
-3. Create an admin account for day-to-day use.
-4. Optionally create editor and viewer accounts.
+1. Log in as `admin`.
+2. Set a new password when prompted.
+3. Create additional accounts as needed (editor, viewer).
 
-## User Management via UI
+## User Management via API
 
-Admins can manage users from the **Admin** page (`/admin`):
-
-- View existing users
-- Create new users
-- Delete users
-- Reset passwords
-
-## User Management via curl
-
-For scripting or headless environments, users can be managed through the API.
+Users are created and deleted through the API.
 
 > In the examples below, replace `YOUR_DOMAIN` with your actual domain
 > (e.g., `localhost` or `ptt.example.edu`). Lines are split with `\` for
@@ -60,7 +50,7 @@ curl -X POST https://YOUR_DOMAIN/db/create_user \
   }'
 ```
 
-Valid roles: `admin`, `editor`, `viewer`.
+Valid roles: `administrator`, `editor`, `viewer`.
 
 The new user will be prompted to change their password on first login.
 
@@ -77,7 +67,7 @@ curl -X POST https://YOUR_DOMAIN/db/delete_user \
 
 ### Reset a user's password
 
-> Requires **Admin** role.
+> Requires **Administrator** role.
 
 ```bash
 curl -X POST https://YOUR_DOMAIN/reset_user_password \
@@ -94,13 +84,12 @@ change it on their next login.
 
 ## Role Permissions
 
-| Capability | Superadmin | Admin | Editor | Viewer |
-|-----------|:---:|:---:|:---:|:---:|
-| View records | Y | Y | Y | Y |
-| Search/filter | Y | Y | Y | Y |
-| Export CSV | Y | Y | Y | Y |
-| Export restricted fields | Y | Y | - | - |
-| Edit records | Y | Y | Y | - |
-| Upload CSV | Y | Y | - | - |
-| Manage users | Y | Y | - | - |
-| Bootstrap (first admin) | Y | - | - | - |
+| Capability | Administrator | Editor | Viewer |
+|-----------|:---:|:---:|:---:|
+| View records | Y | Y | Y |
+| Search/filter | Y | Y | Y |
+| Export CSV | Y | Y | Y |
+| Export restricted fields | Y | - | - |
+| Edit records | Y | Y | - |
+| Upload CSV | Y | - | - |
+| Manage users (API) | Y | - | - |

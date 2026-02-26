@@ -10,7 +10,7 @@ First production release. Deployed for field testing with IHE partners.
 
 - CSV upload for three data types: Student IHE Data, Clinical Placement, and
   Program & Student Info
-- Role-based access control (superadmin, admin, editor, viewer)
+- Role-based access control (administrator, editor, viewer)
 - Student record search with URL-persisted filters
 - Record editing with category-level permissions
 - Data export to CSV with role-based column visibility

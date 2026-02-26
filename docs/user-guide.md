@@ -11,14 +11,13 @@
 
 | Role | Capabilities |
 |------|-------------|
-| **Superadmin** | Full access; bootstrap account for creating the first admin |
-| **Admin** | Upload CSV data, manage users, edit all records, export data (including restricted fields) |
+| **Administrator** | Upload CSV data, manage users (via API), edit all records, export data (including restricted fields) |
 | **Editor** | Edit records in editable categories, search, export |
 | **Viewer** | Read-only access: search records and export (excluding restricted fields) |
 
 ## CSV Upload
 
-> Requires the **Admin** role.
+> Requires the **Administrator** role.
 
 Navigate to the **Upload** page. Three upload types are supported:
 
@@ -54,7 +53,7 @@ From the home page:
 
 ## Editing Records
 
-> Requires **Admin** or **Editor** role.
+> Requires **Administrator** or **Editor** role.
 
 1. Open a student record from search results.
 2. Editable fields (determined by the category's `editable` setting in

@@ -104,10 +104,9 @@ This script:
 
 1. Open `https://localhost` (or your `DOMAIN`) in a browser.
    Accept the self-signed certificate warning if using `TLS_MODE=internal`.
-2. Log in with the default superadmin account:
-   - Username: `superadmin`
-   - Password: `changeme`
-3. **Change the default password immediately** via the user profile page.
+2. Log in with the default admin account:
+   - Username: `admin`
+   - You will be prompted to set a new password on first login.
 
 ### 6. Enable auto-start on boot (production)
 
