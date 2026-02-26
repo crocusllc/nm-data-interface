@@ -9,6 +9,8 @@ import psycopg2.extras
 from psycopg2 import sql as pgsql
 from flask import Flask, request, jsonify, send_file, current_app
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from passlib.hash import bcrypt
 from functools import wraps
 import base64
@@ -64,6 +66,7 @@ def create_conn():
 def create_app():
     app = Flask(__name__)
     CORS(app, origins=[os.environ.get("CORS_ORIGIN", "https://localhost")])
+    limiter = Limiter(get_remote_address, app=app, default_limits=[])
 
     # Set up DB engine
     app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
@@ -80,7 +83,8 @@ def create_app():
             conn.close()
             return f"Hello, World! PostgreSQL version: {db_version}"
         except Exception as e:
-            return f"Error connecting to DB: {e}"
+            current_app.logger.error(f"Health check DB error: {e}")
+            return "Service unavailable", 503
 
     # ========== AUTH DECORATOR ==========
     def login_required(role_required=None):
@@ -120,6 +124,7 @@ def create_app():
 
     # ========== LOGIN ENDPOINT ==========
     @app.route("/login", methods=["POST"])
+    @limiter.limit("10 per minute")
     def login():
         data = request.get_json() or {}
         username = data.get("username")
@@ -128,14 +133,20 @@ def create_app():
         if not username or not password:
             return jsonify({"error": "Missing username/password"}), 400
 
-        conn = create_conn()
-        cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+        conn = None
+        cur = None
+        try:
+            conn = create_conn()
+            cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        cur.execute(f"SELECT user_id, user_role, password_hash, username, new_password from users where username=%s;", (username,))
-        user = cur.fetchone()
-
-        cur.close()
-        conn.close()
+            cur.execute("SELECT user_id, user_role, password_hash, username, new_password from users where username=%s;", (username,))
+            user = cur.fetchone()
+        except psycopg2.Error as e:
+            current_app.logger.error(f"Database error in login: {e}")
+            return jsonify({"error": "A database error occurred."}), 500
+        finally:
+            if cur: cur.close()
+            if conn: conn.close()
 
         if not user:
             return jsonify({"error": "Invalid username or password"}), 401
@@ -167,21 +178,30 @@ def create_app():
 
         if (data != {}):
             username = data.get("username")
-            
-            conn = create_conn()
-            cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-            cur.execute(f"SELECT username from users where username=%s;", (username,))
-                    
-            user = cur.fetchone()
-            
-            if user is not None:
-                cur.execute("DELETE FROM users WHERE username = %s;", (username,))
-                conn.commit()
+            conn = None
+            cur = None
+            try:
+                conn = create_conn()
+                cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-                return jsonify({"message": f"The record was deleted successfully."})
-            else:
-                return jsonify({"error": f"The data is wrong."})
+                cur.execute("SELECT username from users where username=%s;", (username,))
+
+                user = cur.fetchone()
+
+                if user is not None:
+                    cur.execute("DELETE FROM users WHERE username = %s;", (username,))
+                    conn.commit()
+
+                    return jsonify({"message": f"The record was deleted successfully."})
+                else:
+                    return jsonify({"error": f"The data is wrong."})
+            except psycopg2.Error as e:
+                current_app.logger.error(f"Database error in delete_user: {e}")
+                return jsonify({"error": "A database error occurred."}), 500
+            finally:
+                if cur: cur.close()
+                if conn: conn.close()
     
     # ========== CREATE USER ENDPOINT ==========
     @app.route("/create_user", methods=["POST"])
@@ -203,20 +223,26 @@ def create_app():
 
         bytes = password.encode("utf-8")
         hash = bcrypt.hash(bytes)
-        
-        conn = create_conn()
-        cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        cur.execute(
-            "INSERT INTO users (username, password_hash, user_email, password_expiration_date, user_role) VALUES (%s, %s, %s, %s, %s) RETURNING user_id;",
-            (username, hash, useremail, expiration_date, userrole)
-        )
-        returned_id = cur.fetchone()['user_id']
-        
-        conn.commit()
+        conn = None
+        cur = None
+        try:
+            conn = create_conn()
+            cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        cur.close()
-        conn.close()
+            cur.execute(
+                "INSERT INTO users (username, password_hash, user_email, password_expiration_date, user_role) VALUES (%s, %s, %s, %s, %s) RETURNING user_id;",
+                (username, hash, useremail, expiration_date, userrole)
+            )
+            returned_id = cur.fetchone()['user_id']
+
+            conn.commit()
+        except psycopg2.Error as e:
+            current_app.logger.error(f"Database error in create_user: {e}")
+            return jsonify({"error": "A database error occurred."}), 500
+        finally:
+            if cur: cur.close()
+            if conn: conn.close()
 
         message = f"The user was created successfully with ID {returned_id}!"
 
@@ -224,27 +250,33 @@ def create_app():
 
     # ========== CHANGE PASSWORD ENDPOINT ==========
     @app.route("/change_password", methods=["POST"])
-    @login_required(role_required=["administrator", "editor","viewer"])
+    @login_required(role_required=["superadmin", "administrator", "editor","viewer"])
     def change_password():
         data = request.get_json() or {}
         password = data.get("password")
-        
+
         user = get_header_data(request.headers,'sub')
 
         bytes = password.encode("utf-8")
         hash = bcrypt.hash(bytes)
 
-        conn = create_conn()
-        cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+        conn = None
+        cur = None
+        try:
+            conn = create_conn()
+            cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        cur.execute(
-            "UPDATE users SET password_hash = %s, new_password = FALSE WHERE username = %s;",
-            (hash, user)
-        )
-        conn.commit()
-
-        cur.close()
-        conn.close()
+            cur.execute(
+                "UPDATE users SET password_hash = %s, new_password = FALSE WHERE username = %s;",
+                (hash, user)
+            )
+            conn.commit()
+        except psycopg2.Error as e:
+            current_app.logger.error(f"Database error in change_password: {e}")
+            return jsonify({"error": "A database error occurred."}), 500
+        finally:
+            if cur: cur.close()
+            if conn: conn.close()
 
         return jsonify({"message": f"The username {user} set the password successfully!"})
 
@@ -266,32 +298,37 @@ def create_app():
         if len(new_password) < 8:
             return jsonify({"error": "Password must be at least 8 characters"}), 400
 
-        conn = create_conn()
-        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        conn = None
+        cur = None
+        try:
+            conn = create_conn()
+            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # Check if user exists
-        cur.execute("SELECT user_id FROM users WHERE username = %s", (username,))
-        user = cur.fetchone()
+            # Check if user exists
+            cur.execute("SELECT user_id FROM users WHERE username = %s", (username,))
+            user = cur.fetchone()
 
-        if user is None:
-            cur.close()
-            conn.close()
-            return jsonify({"error": f"User '{username}' not found"}), 404
+            if user is None:
+                return jsonify({"error": f"User '{username}' not found"}), 404
 
-        # Hash the new password
-        password_bytes = new_password.encode("utf-8")
-        password_hash = bcrypt.hash(password_bytes)
+            # Hash the new password
+            password_bytes = new_password.encode("utf-8")
+            password_hash = bcrypt.hash(password_bytes)
 
-        # Update password and set new_password flag
-        cur.execute("""
-            UPDATE users
-            SET password_hash = %s, new_password = TRUE
-            WHERE username = %s
-        """, (password_hash, username))
+            # Update password and set new_password flag
+            cur.execute("""
+                UPDATE users
+                SET password_hash = %s, new_password = TRUE
+                WHERE username = %s
+            """, (password_hash, username))
 
-        conn.commit()
-        cur.close()
-        conn.close()
+            conn.commit()
+        except psycopg2.Error as e:
+            current_app.logger.error(f"Database error in reset_user_password: {e}")
+            return jsonify({"error": "A database error occurred."}), 500
+        finally:
+            if cur: cur.close()
+            if conn: conn.close()
 
         return jsonify({
             "message": f"Password for user '{username}' has been reset successfully. User will be prompted to change password on next login."
@@ -326,6 +363,11 @@ def create_app():
             fields = metadata["fields"]
         
             file_content = request.files['file']
+
+            # Validate file type
+            filename = file_content.filename or ''
+            if not filename.lower().endswith('.csv'):
+                return jsonify({"error": "Only CSV files are accepted"}), 400
 
             if not file_name or not table_name or not fields or not file_content:
                 return jsonify({"error": "Missing file_name, table_name, fields, or file"}), 400
