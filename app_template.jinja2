@@ -6,11 +6,26 @@ import datetime
 import psycopg2
 import json
 import psycopg2.extras
+from psycopg2 import sql as pgsql
 from flask import Flask, request, jsonify, send_file, current_app
 from flask_cors import CORS
 from passlib.hash import bcrypt
 from functools import wraps
 import base64
+
+ALLOWED_TABLES = {"student_info", "program_info", "clinical_placements"}
+ALLOWED_LOG_TABLES = {"student_info", "program_info", "clinical_placements", "all"}
+ALLOWED_FILTER_COLUMNS = {
+    "first_name", "last_name", "birth_date", "student_id",
+    "ihe_expected_graduation_term", "ihe_exit_date", "ihe_enrollment_status",
+    "academic_level", "program_name", "program_completion_status",
+    "placement_type", "placement_start_date", "placement_end_date",
+    "exit_date",
+}
+
+def validate_table(table_name):
+    if table_name not in ALLOWED_TABLES:
+        raise ValueError(f"Invalid table name: {table_name}")
 
 def key_to_text(key_binary):
     return base64.urlsafe_b64encode(key_binary).decode()
@@ -37,11 +52,11 @@ def get_header_data(headers, key):
 def create_conn():
     # Set up DB engine
     conn = psycopg2.connect(
-        dbname="{{PG_DB}}",
-        user="{{PG_USER}}",
-        password="{{PG_PWD}}",
-        host="{{PG_HOST}}",
-        port="{{PG_PORT}}"
+        dbname=os.environ["PG_DB"],
+        user=os.environ["PG_USER"],
+        password=os.environ["PG_PWD"],
+        host=os.environ.get("PG_HOST", "localhost"),
+        port=os.environ.get("PG_PORT", "5432")
     )
 
     return conn
@@ -51,7 +66,7 @@ def create_app():
     CORS(app, origins=["*"])
 
     # Set up DB engine
-    app.config["SECRET_KEY"] = "{{SECRET_KEY}}"
+    app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 
     @app.route('/')
     def hello():
@@ -162,9 +177,7 @@ def create_app():
             user = cur.fetchone()
             
             if user is not None:
-                query = f"DELETE FROM users WHERE username = '{username}';"
-                
-                result = cur.execute(query)
+                cur.execute("DELETE FROM users WHERE username = %s;", (username,))
                 conn.commit()
 
                 return jsonify({"message": f"The record was deleted successfully."})
@@ -173,6 +186,7 @@ def create_app():
     
     # ========== CREATE USER ENDPOINT ==========
     @app.route("/create_user", methods=["POST"])
+    @login_required(role_required=["administrator"])
     def create_user():
         data = request.get_json() or {}
         username = data.get("username")
@@ -194,8 +208,10 @@ def create_app():
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        query = f"INSERT INTO users (username, password_hash, user_email, password_expiration_date, user_role) VALUES ('{username}','{hash}','{useremail}','{expiration_date}','{userrole}') RETURNING user_id;"
-        cur.execute(query)
+        cur.execute(
+            "INSERT INTO users (username, password_hash, user_email, password_expiration_date, user_role) VALUES (%s, %s, %s, %s, %s) RETURNING user_id;",
+            (username, hash, useremail, expiration_date, userrole)
+        )
         returned_id = cur.fetchone()['user_id']
         
         conn.commit()
@@ -222,8 +238,10 @@ def create_app():
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-        query = f"UPDATE users SET password_hash = '{hash}', new_password = FALSE WHERE username = '{user}';"
-        cur.execute(query)
+        cur.execute(
+            "UPDATE users SET password_hash = %s, new_password = FALSE WHERE username = %s;",
+            (hash, user)
+        )
         conn.commit()
 
         cur.close()
@@ -363,8 +381,10 @@ def create_app():
                         returned_id = cur.fetchone()[base_id]
                         conn.commit()
 
-                        query_log = f"INSERT INTO logs(user_id, file_name, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, '{file_name}', 'uploaded', CURRENT_TIMESTAMP, '{table_name}', {returned_id}, {total_records}, 1, 0);"
-                        cur.execute(query_log)
+                        cur.execute(
+                            "INSERT INTO logs(user_id, file_name, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES (%s, %s, 'uploaded', CURRENT_TIMESTAMP, %s, %s, %s, 1, 0);",
+                            (user_id, file_name, table_name, returned_id, total_records)
+                        )
 
                         conn.commit()
  
@@ -402,6 +422,8 @@ def create_app():
         conn = create_conn()
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
+        query_params = []
+
         if query_fields != "*":
             query_base = 'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id'
 
@@ -417,8 +439,13 @@ def create_app():
 
             # Add the no-date fields to the condition using AND operator
             if fields_not_date:
-                text_conditions = " AND ".join([f"lower(PGP_SYM_DECRYPT({key}, '{key_encrypt}'::text)) like lower('%{value}%')" for key, value in fields_not_date.items()])
-                where_conditions.append(f"({text_conditions})")
+                text_parts = []
+                for key, value in fields_not_date.items():
+                    if key not in ALLOWED_FILTER_COLUMNS:
+                        return jsonify({"error": f"Invalid filter column: {key}"}), 400
+                    text_parts.append(f"lower(PGP_SYM_DECRYPT({pgsql.Identifier(key).as_string(conn)}, {key_encrypt!r}::text)) like lower(%s)")
+                    query_params.append(f"%{value}%")
+                where_conditions.append(f"({' AND '.join(text_parts)})")
 
             # Add date data.
             start_date = fields.get('placement_start_date')
@@ -427,20 +454,24 @@ def create_app():
             # Generate date condition: record_start_date <= selected_end_date && record_end_date >= selected_start_date.
             if start_date and end_date:
                 date_range_condition = f"""
-                (TO_DATE(PGP_SYM_DECRYPT(placement_start_date, '{key_encrypt}'::text), 'MM/DD/YYYY') <= '{end_date}'::date
+                (TO_DATE(PGP_SYM_DECRYPT(placement_start_date, {key_encrypt!r}::text), 'MM/DD/YYYY') <= %s::date
                  AND
-                 TO_DATE(PGP_SYM_DECRYPT(placement_end_date, '{key_encrypt}'::text), 'MM/DD/YYYY') >= '{start_date}'::date)
+                 TO_DATE(PGP_SYM_DECRYPT(placement_end_date, {key_encrypt!r}::text), 'MM/DD/YYYY') >= %s::date)
                 """
                 where_conditions.append(date_range_condition)
+                query_params.extend([end_date, start_date])
             elif start_date:
-                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_end_date, '{key_encrypt}'::text), 'MM/DD/YYYY') >= '{start_date}'::date)")
+                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_end_date, {key_encrypt!r}::text), 'MM/DD/YYYY') >= %s::date)")
+                query_params.append(start_date)
             elif end_date:
-                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_start_date, '{key_encrypt}'::text), 'MM/DD/YYYY') <= '{end_date}'::date)")
+                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(placement_start_date, {key_encrypt!r}::text), 'MM/DD/YYYY') <= %s::date)")
+                query_params.append(end_date)
 
             # Adding exit_date_val as AND condition because is not part of start or end date.
             exit_date_val = fields.get('exit_date')
             if exit_date_val:
-                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(exit_date,'{key_encrypt}'::text), 'MM/DD/YYYY') <= '{exit_date_val}'::date)")
+                where_conditions.append(f"(TO_DATE(PGP_SYM_DECRYPT(exit_date, {key_encrypt!r}::text), 'MM/DD/YYYY') <= %s::date)")
+                query_params.append(exit_date_val)
 
             # Build final query.
             query_all = query_base
@@ -449,9 +480,9 @@ def create_app():
 
             query_all += ";"
         else:
-            query_all = f'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id;'
+            query_all = 'SELECT * FROM student_info s LEFT JOIN clinical_placements c ON s.student_id=c.student_id LEFT JOIN program_info p ON s.student_id=p.student_id;'
 
-        cur.execute(query_all)
+        cur.execute(query_all, query_params)
         results = cur.fetchone()
 
         if results is not None:
@@ -480,9 +511,10 @@ def create_app():
                     if row['student_id'] is None:
                         row['student_id'] = 'all'
 
-                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'downloaded', CURRENT_TIMESTAMP, 'all', {row['student_id']}, {total_records}, 1, 0);"
-                        
-                    cur.execute(query_log)
+                    cur.execute(
+                        "INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES (%s, 'downloaded', CURRENT_TIMESTAMP, 'all', %s, %s, 1, 0);",
+                        (user_id, row['student_id'], total_records)
+                    )
                     conn.commit()
                 
                 output.seek(0)
@@ -507,27 +539,31 @@ def create_app():
 
         if (data != {}):
             if 'table_name' in data and 'id' in data:
-                id = data.get("id")
+                record_id = int(data.get("id"))
                 table = data.get("table_name")
-                
+                validate_table(table)
+
                 user_id = get_header_data(request.headers, 'id')
 
                 conn = create_conn()
                 cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
-                    
-                query = f"DELETE FROM {table} WHERE clinical_id={id};"
-                cur.execute(query)
+
+                cur.execute(
+                    pgsql.SQL("DELETE FROM {} WHERE clinical_id = %s;").format(pgsql.Identifier(table)),
+                    (record_id,)
+                )
                 conn.commit()
 
-                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, '{table}', {id}, 1, 1, 0);"
-                    
-                cur.execute(query_log)
+                cur.execute(
+                    "INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES (%s, 'deleted', CURRENT_TIMESTAMP, %s, %s, 1, 1, 0);",
+                    (user_id, table, record_id)
+                )
                 conn.commit()
- 
+
                 cur.close()
                 conn.close()
-                
-                return jsonify({"message": f"The record with ID {id} was delete successfully."})
+
+                return jsonify({"message": f"The record with ID {record_id} was delete successfully."})
             else:
                 return jsonify({"message": f"Missing student_id."})
         
@@ -543,37 +579,40 @@ def create_app():
             if 'student_id' in data and isinstance(data.get("student_id"), list):
                 student_ids = data.get("student_id")
 
+                user_id = get_header_data(request.headers, 'id')
+
+                conn = create_conn()
+                cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+
                 for student_id in student_ids:
-                    user_id = get_header_data(request.headers, 'id')
+                    student_id = int(student_id)
 
-                    conn = create_conn()
-                    cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
-                    
-                    query = f"DELETE FROM student_info WHERE student_id={student_id};"
-                    cur.execute(query)
+                    cur.execute("DELETE FROM student_info WHERE student_id = %s;", (student_id,))
                     conn.commit()
 
-                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, 'student_info', {student_id}, 1, 1, 0);"
-                    
-                    cur.execute(query_log)
+                    cur.execute(
+                        "INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES (%s, 'deleted', CURRENT_TIMESTAMP, 'student_info', %s, 1, 1, 0);",
+                        (user_id, student_id)
+                    )
                     conn.commit()
 
-                    query = f"DELETE FROM program_info WHERE student_id={student_id};"
-                    cur.execute(query)
+                    cur.execute("DELETE FROM program_info WHERE student_id = %s;", (student_id,))
                     conn.commit()
 
-                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, 'program_info', {student_id}, 1, 1, 0);"
-                    
-                    cur.execute(query_log)
+                    cur.execute(
+                        "INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES (%s, 'deleted', CURRENT_TIMESTAMP, 'program_info', %s, 1, 1, 0);",
+                        (user_id, student_id)
+                    )
                     conn.commit()
 
-                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'deleted', CURRENT_TIMESTAMP, 'clinical_placements', {student_id}, 1, 1, 0);"
-                    
-                    cur.execute(query_log)
+                    cur.execute(
+                        "INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES (%s, 'deleted', CURRENT_TIMESTAMP, 'clinical_placements', %s, 1, 1, 0);",
+                        (user_id, student_id)
+                    )
                     conn.commit()
-    
-                    cur.close()
-                    conn.close()
+
+                cur.close()
+                conn.close()
                     
                 return jsonify({"message": f"The student_ids {list(student_ids)} data was delete successfully."})
             else:
@@ -592,7 +631,7 @@ def create_app():
             id = data.get("id")
 
             if 'clinical_id' in data:
-                id = data.get("clinical_id")            
+                id = data.get("clinical_id")
 
             student_id = data.get("student_id")
             source = data.get("source")
@@ -606,104 +645,151 @@ def create_app():
                 "clinical": "clinical_placements"
             }
 
-            if source_to_table[source] == 'program_info':
+            if source not in source_to_table:
+                return jsonify({"error": "Invalid source"}), 400
+
+            table_name = source_to_table[source]
+            validate_table(table_name)
+
+            if table_name == 'program_info':
                 id = data.get("student_id")
 
             to_update = data.copy()
             to_update.pop('id', None)
             to_update.pop('student_id', None)
             to_update.pop('source', None)
+            to_update.pop('clinical_id', None)
 
-            for key in to_update:
-                if to_update[key] is None:
-                    to_update.pop(key, None)
-            
-            def with_values(key):
-                return '\'' if to_update[key] != '' else ''
+            # Remove None values
+            to_update = {k: v for k, v in to_update.items() if v is not None}
 
-            def value_or_null(key, fernet_key):
-                value_returned = f"PGP_SYM_ENCRYPT({with_values(key)}{to_update[key]}{with_values(key)}, '{fernet_key}'::text)::bytea"
+            no_encrypt = {'student_id', 'clinical_id', 'program_id'}
 
-                if key == 'clinical_id' or key == 'student_id':
-                    value_returned = f"{with_values(key)}{to_update[key]}{with_values(key)}"    
+            def value_or_null_param(key, fernet_key):
+                """Returns (sql_fragment, param_value) tuple for parameterized queries."""
+                val = to_update[key]
 
-                if isinstance(to_update[key], list):
-                    value_returned = ';'.join(to_update[key])
-                    value_returned = f"PGP_SYM_ENCRYPT({with_values(key)}{value_returned}{with_values(key)}, '{fernet_key}'::text)::bytea"                    
-  
-                if to_update[key] == '' or to_update[key] is None:
-                    value_returned = 'NULL'
+                if key in no_encrypt:
+                    return ("%s", val)
 
-                return value_returned
+                if isinstance(val, list):
+                    val = ';'.join(val)
+
+                if val == '' or val is None:
+                    return ("NULL", None)
+
+                return (f"PGP_SYM_ENCRYPT(%s, {fernet_key!r}::text)::bytea", val)
 
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
             if id is not None and student_id is not None:
-                set_values = ', '.join(f'{key} = {value_or_null(key, fernet_key)}' for key in to_update)
+                if table_name == 'student_info':
+                    set_parts = []
+                    params = []
+                    for key in to_update:
+                        frag, param = value_or_null_param(key, fernet_key)
+                        set_parts.append(pgsql.SQL("{} = " + frag).format(pgsql.Identifier(key)))
+                        if param is not None:
+                            params.append(param)
+                    params.append(int(student_id))
 
-                if source_to_table[source] == 'student_info':
-                    query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE student_id = {student_id};'
-                    cur.execute(query)
+                    query = pgsql.SQL("UPDATE {} SET {} WHERE student_id = %s;").format(
+                        pgsql.Identifier(table_name),
+                        pgsql.SQL(", ").join(set_parts)
+                    )
+                    cur.execute(query, params)
                     conn.commit()
 
-                    query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, '{source_to_table[source]}', {student_id}, 1, 1, 0);"
-                    
-                    cur.execute(query_log)
+                    cur.execute(
+                        "INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES (%s, 'updated', CURRENT_TIMESTAMP, %s, %s, 1, 1, 0);",
+                        (user_id, table_name, student_id)
+                    )
                     conn.commit()
-    
+
                     cur.close()
                     conn.close()
 
                     return jsonify({"message": f"The record was created successfully."})
 
-                if source_to_table[source] == 'clinical_placements':
-                    query = f'UPDATE {source_to_table[source]} SET {set_values} WHERE clinical_id = {id};'
+                if table_name == 'clinical_placements':
+                    set_parts = []
+                    params = []
+                    for key in to_update:
+                        frag, param = value_or_null_param(key, fernet_key)
+                        set_parts.append(pgsql.SQL("{} = " + frag).format(pgsql.Identifier(key)))
+                        if param is not None:
+                            params.append(param)
+                    params.append(int(id))
 
-                    cur.execute(query)
+                    query = pgsql.SQL("UPDATE {} SET {} WHERE clinical_id = %s;").format(
+                        pgsql.Identifier(table_name),
+                        pgsql.SQL(", ").join(set_parts)
+                    )
+                    cur.execute(query, params)
 
-                if source_to_table[source] == 'program_info':
-                    no_encrypt = {'student_id', 'clinical_id', 'program_id'}
+                if table_name == 'program_info':
+                    col_ids = [pgsql.Identifier(col) for col in to_update.keys()]
+                    value_fragments = []
+                    params = [int(id)]
+                    for col in to_update.keys():
+                        frag, param = value_or_null_param(col, fernet_key)
+                        value_fragments.append(frag)
+                        if param is not None:
+                            params.append(param)
 
-                    query = f"""
-                        INSERT INTO {source_to_table[source]} (student_id,{', '.join(to_update.keys())}) 
-                        VALUES ({id},{', '.join([ '%s' if no_encrypt.issuperset([col]) else value_or_null(col, fernet_key) for col in to_update.keys()])})
-                        ON CONFLICT (student_id) DO UPDATE
-                        SET {', '.join(f"{key} = EXCLUDED.{key}" for key in to_update.keys())}
-                        RETURNING student_id
-                    """
+                    excluded_set = [pgsql.SQL("{0} = EXCLUDED.{0}").format(pgsql.Identifier(k)) for k in to_update.keys()]
 
-                    values = list(to_update.values())
-                    values.insert(0, id)
+                    query = pgsql.SQL(
+                        "INSERT INTO {table} (student_id, {cols}) VALUES (%s, {vals}) "
+                        "ON CONFLICT (student_id) DO UPDATE SET {excluded} RETURNING student_id"
+                    ).format(
+                        table=pgsql.Identifier(table_name),
+                        cols=pgsql.SQL(", ").join(col_ids),
+                        vals=pgsql.SQL(", ").join([pgsql.SQL(f) for f in value_fragments]),
+                        excluded=pgsql.SQL(", ").join(excluded_set)
+                    )
 
-                    cur.execute(query, values)
-                    
+                    cur.execute(query, params)
+
                 conn.commit()
-                
-                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'updated', CURRENT_TIMESTAMP, '{source_to_table[source]}', {id}, 1, 1, 0);"
-                
-                cur.execute(query_log)
+
+                cur.execute(
+                    "INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES (%s, 'updated', CURRENT_TIMESTAMP, %s, %s, 1, 1, 0);",
+                    (user_id, table_name, id)
+                )
                 conn.commit()
 
                 cur.close()
                 conn.close()
-                
-                return jsonify({"message": f"The record was updated successfully."})            
+
+                return jsonify({"message": f"The record was updated successfully."})
 
             if id is None:
-                columns = ', '.join([f'{key}' for key in to_update])
-                values = ', '.join([f'{value_or_null(key, fernet_key)}' for key in to_update])
+                col_ids = [pgsql.Identifier(k) for k in to_update.keys()]
+                value_fragments = []
+                params = [int(student_id)]
+                for key in to_update:
+                    frag, param = value_or_null_param(key, fernet_key)
+                    value_fragments.append(frag)
+                    if param is not None:
+                        params.append(param)
 
-                query = f'INSERT INTO {source_to_table[source]}(student_id, {columns}) VALUES ({student_id},{values});'
+                query = pgsql.SQL("INSERT INTO {table}(student_id, {cols}) VALUES (%s, {vals});").format(
+                    table=pgsql.Identifier(table_name),
+                    cols=pgsql.SQL(", ").join(col_ids),
+                    vals=pgsql.SQL(", ").join([pgsql.SQL(f) for f in value_fragments])
+                )
 
-                cur.execute(query)
+                cur.execute(query, params)
                 conn.commit()
 
-                query_log = f"INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES ({user_id}, 'created', CURRENT_TIMESTAMP, '{source_to_table[source]}', {student_id}, 1, 1, 0);"
-                    
-                cur.execute(query_log)
+                cur.execute(
+                    "INSERT INTO logs(user_id, action, timestamp, source_table, source_id, total_records, valid_records, invalid_records) VALUES (%s, 'created', CURRENT_TIMESTAMP, %s, %s, 1, 1, 0);",
+                    (user_id, table_name, student_id)
+                )
                 conn.commit()
-    
+
                 cur.close()
                 conn.close()
 
@@ -734,27 +820,57 @@ def create_app():
         
         if (data != {} and 'source' in data):
             table = data.get("source")
+            validate_table(table)
 
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
-            def encrypt_based_column(key_encrypt, column, table):
-                if table == 'student_info':
-                    return f"PGP_SYM_DECRYPT(t.{column}, '{key_encrypt}')" 
-                    
-                return f"PGP_SYM_DECRYPT(s.{column}, '{key_encrypt}')"
-
             base_id = "student_id"
-        
             if table == 'clinical_placements':
                 base_id = "clinical_id"
 
-            if table == 'program_info':
-                base_id = "student_id"
-            
-            query_data = f"SELECT l.source_table, l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, {'t.student_id' if table == 'student_info' else 's.student_id'} as student_id, {encrypt_based_column(key_encrypt, 'first_name', table)} as first_name, {encrypt_based_column(key_encrypt, 'last_name', table)} as last_name, {encrypt_based_column(key_encrypt, 'birth_date', table)} as birth_date FROM logs l JOIN {table} t ON l.source_id=t.{base_id} {'' if table == 'student_info' else ' JOIN student_info s ON t.student_id=s.student_id'} WHERE l.source_table='{table}'"
-            
-            cur.execute(query_data)
+            # Build query using pgsql.Identifier for table/column names
+            t_table = pgsql.Identifier(table)
+            t_base_id = pgsql.Identifier(base_id)
+
+            if table == 'student_info':
+                student_id_col = pgsql.SQL("t.student_id")
+                fn_prefix = pgsql.SQL("t")
+            else:
+                student_id_col = pgsql.SQL("s.student_id")
+                fn_prefix = pgsql.SQL("s")
+
+            if table == 'student_info':
+                query_data = pgsql.SQL(
+                    "SELECT l.source_table, l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, "
+                    "t.student_id as student_id, "
+                    "PGP_SYM_DECRYPT(t.first_name, {key}) as first_name, "
+                    "PGP_SYM_DECRYPT(t.last_name, {key}) as last_name, "
+                    "PGP_SYM_DECRYPT(t.birth_date, {key}) as birth_date "
+                    "FROM logs l JOIN {table} t ON l.source_id = t.{base_id} "
+                    "WHERE l.source_table = %s"
+                ).format(
+                    key=pgsql.Literal(key_encrypt),
+                    table=t_table,
+                    base_id=t_base_id
+                )
+            else:
+                query_data = pgsql.SQL(
+                    "SELECT l.source_table, l.file_name, l.timestamp as upload_date, l.action as record_status, l.error_message, "
+                    "s.student_id as student_id, "
+                    "PGP_SYM_DECRYPT(s.first_name, {key}) as first_name, "
+                    "PGP_SYM_DECRYPT(s.last_name, {key}) as last_name, "
+                    "PGP_SYM_DECRYPT(s.birth_date, {key}) as birth_date "
+                    "FROM logs l JOIN {table} t ON l.source_id = t.{base_id} "
+                    "JOIN student_info s ON t.student_id = s.student_id "
+                    "WHERE l.source_table = %s"
+                ).format(
+                    key=pgsql.Literal(key_encrypt),
+                    table=t_table,
+                    base_id=t_base_id
+                )
+
+            cur.execute(query_data, (table,))
             result = cur.fetchall()
 
             cur.close()
