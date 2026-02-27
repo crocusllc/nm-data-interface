@@ -1,11 +1,13 @@
 #!/bin/bash
 # Backup PTT database before updates
+umask 077
 
 BACKUP_DIR="${1:-./backups}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="$BACKUP_DIR/ptt_backup_$TIMESTAMP.sql"
 
 mkdir -p "$BACKUP_DIR"
+chmod 700 "$BACKUP_DIR"
 
 echo "Creating database backup..."
 docker compose exec -T api pg_dump -U postgres -d ptt_db --clean --if-exists > "$BACKUP_FILE"

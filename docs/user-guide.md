@@ -11,9 +11,9 @@
 
 | Role | Capabilities |
 |------|-------------|
-| **Administrator** | Upload CSV data, manage users (via API), edit all records, export data (including restricted fields) |
-| **Editor** | Edit records in editable categories, search, export |
-| **Viewer** | Read-only access: search records and export (excluding restricted fields) |
+| **Administrator** | Upload CSV data, export CSV data, manage users (via API), edit all records |
+| **Editor** | Edit records in editable categories, search |
+| **Viewer** | Read-only access: search and view records |
 
 ## CSV Upload
 
@@ -64,8 +64,8 @@ From the home page:
 
 ## Data Export
 
+> Requires the **Administrator** role.
+
 1. Navigate to the **Download** page.
 2. Apply optional filters (placement type, dates, district, etc.).
 3. Click **Export** to download a CSV file.
-4. Columns included depend on your role — fields marked `Admin Only` are only
-   included for Admin users.

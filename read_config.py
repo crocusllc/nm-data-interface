@@ -227,27 +227,24 @@ def main():
             template_str = f.read()
 
         # Get database config from environment variables (set by Docker ARGs)
-        pguser = os.environ.get('PG_USER', 'postgres')
-        pgdb = os.environ.get('PG_DB', 'ptt_db')
-        pgpwd = os.environ.get('PG_PWD', 'postgres')
+        def _require_env(name):
+            value = os.environ.get(name)
+            if not value:
+                raise RuntimeError(f"Required environment variable {name} is not set")
+            return value
+
+        pguser = _require_env('PG_USER')
+        pgdb = _require_env('PG_DB')
+        pgpwd = _require_env('PG_PWD')
         pgport = os.environ.get('PG_PORT', '5432')
         pghost = os.environ.get('PG_HOST', 'localhost')
-        secretkey = os.environ.get('SECRET_KEY', 'CHANGE_ME')
+        secretkey = _require_env('SECRET_KEY')
 
         # 3. Render the template
         jinja_env = jinja2.Environment()
         template = jinja_env.from_string(template_str)
         rendered_code = template.render(PG_USER=pguser, PG_DB=pgdb, PG_PORT=pgport, PG_PWD=pgpwd, PG_HOST=pghost, SECRET_KEY=secretkey)
         
-        with open("/tmp/supervisord.conf", "r", encoding="utf-8") as f:
-            supervisor_str = f.read()
-
-        template = jinja_env.from_string(supervisor_str)
-        rendered_supervisor = template.render(PG_PORT=pgport, PG_USER=pguser)
-  
-        with open("/tmp/supervisord.conf", "w", encoding="utf-8") as out_file:
-           out_file.write(rendered_supervisor)
- 
         # 4. Write to the output file
         with open(args.output, "w", encoding="utf-8") as out_file:
            out_file.write(rendered_code)
