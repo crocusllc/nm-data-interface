@@ -5,12 +5,18 @@ while [ ! -f /app/config.yaml ]; do
   sleep 1
 done
 
-if [ ! -s "./secret.key" ]; then
+# Validate that secret.key is a regular file, not a directory.
+# Docker bind-mounts create directories when the host path doesn't exist yet.
+if [ -d "/app/secret.key" ]; then
+  echo "ERROR: /app/secret.key is a directory (broken bind mount)."
+  echo "Removing directory and regenerating key inside container..."
+  rm -rf /app/secret.key
+fi
+
+if [ ! -f "/app/secret.key" ] || [ ! -s "/app/secret.key" ]; then
   echo "Generating key..."
   python3 /tmp/read_config.py --mode key --config /app/config.yaml --template /tmp/app_template.jinja2 --output /app/app.py
 fi
-
-mv ./secret.key /app/secret.key
 echo "Key generation complete."
 
 echo "Generating CSV files..."

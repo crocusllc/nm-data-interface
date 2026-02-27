@@ -230,6 +230,10 @@ def create_app():
             conn = create_conn()
             cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
+            cur.execute("SELECT user_id FROM users WHERE username = %s;", (username,))
+            if cur.fetchone() is not None:
+                return jsonify({"error": f"Username '{username}' already exists."}), 409
+
             cur.execute(
                 "INSERT INTO users (username, password_hash, user_email, password_expiration_date, user_role) VALUES (%s, %s, %s, %s, %s) RETURNING user_id;",
                 (username, hash, useremail, expiration_date, userrole)
