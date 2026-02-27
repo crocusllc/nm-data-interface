@@ -70,7 +70,7 @@ curl -X POST https://YOUR_DOMAIN/db/delete_user \
 > Requires **Administrator** role.
 
 ```bash
-curl -X POST https://YOUR_DOMAIN/reset_user_password \
+curl -X POST https://YOUR_DOMAIN/db/reset_user_password \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -88,8 +88,9 @@ change it on their next login.
 |-----------|:---:|:---:|:---:|
 | View records | Y | Y | Y |
 | Search/filter | Y | Y | Y |
-| Export CSV | Y | Y | Y |
-| Export restricted fields | Y | - | - |
 | Edit records | Y | Y | - |
+| Delete records | Y | Y | - |
 | Upload CSV | Y | - | - |
+| Export CSV | Y | - | - |
 | Manage users (API) | Y | - | - |
+| Reset user passwords (API) | Y | - | - |

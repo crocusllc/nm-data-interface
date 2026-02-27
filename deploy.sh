@@ -6,6 +6,18 @@ set -e
 command -v docker >/dev/null 2>&1 || { echo "ERROR: Docker required."; exit 1; }
 command -v docker compose >/dev/null 2>&1 || { echo "ERROR: Docker Compose required."; exit 1; }
 
+# Ensure secret.key exists as a regular file before Docker mounts it.
+# Docker bind-mounts create directories for non-existent paths, which breaks load_key().
+if [ -d "./secret.key" ]; then
+    echo "WARNING: secret.key is a directory (broken mount artifact). Removing and regenerating..."
+    rm -rf ./secret.key
+fi
+if [ ! -f "./secret.key" ]; then
+    echo "Generating encryption key..."
+    python3 -c "import base64, os, sys; sys.stdout.buffer.write(base64.urlsafe_b64encode(os.urandom(32)))" > ./secret.key
+    echo "Encryption key generated."
+fi
+
 echo "Building and starting services..."
 docker compose up -d --build
 

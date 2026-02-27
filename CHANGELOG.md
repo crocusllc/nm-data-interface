@@ -2,6 +2,37 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.1 — 2026-02-26
+
+Security hardening release addressing findings from security review (#83).
+
+### Security Fixes
+
+- **CRITICAL:** Added authentication requirement to `create_user` endpoint;
+  parameterized all SQL queries to prevent injection
+- **HIGH:** Enforced RBAC on all API endpoints; added rate limiting on login
+  (20 requests/minute); stripped `Server` header; restricted CORS to
+  application origin only
+- **MEDIUM:** Added security headers (CSP, HSTS, X-Frame-Options,
+  Referrer-Policy, Permissions-Policy); bound API port to localhost only;
+  removed database port exposure; run Gunicorn as non-root `appuser`;
+  added input validation (table name allowlists, file type checks, password
+  length enforcement); sanitized error responses to prevent information leakage
+
+### Added
+
+- `scripts/qa_security_tests.sh` — automated 72-test security QA suite
+  covering authentication, RBAC, SQL injection, CORS, headers, input
+  validation, error sanitization, and functional CRUD
+
+### Fixed
+
+- `delete_data` endpoint returned 500 on invalid table name or id instead
+  of 400
+- `student_record_info` endpoint accepted non-numeric student_id values
+
+---
+
 ## v1.0 — 2026-02-25
 
 First production release. Deployed for field testing with IHE partners.

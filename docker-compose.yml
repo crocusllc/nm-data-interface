@@ -25,25 +25,27 @@ services:
     build:
       context: .
       args:
-        PG_USER: ${PG_USER}
-        PG_PWD: ${PG_PASSWORD}
-        PG_DB: ${PG_DB}
         PG_PORT: ${PG_PORT}
         PG_HOST: localhost
-        SECRET_KEY: ${SECRET_KEY}
     restart: unless-stopped
     command: /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
     volumes:
       - ./config.yaml:/app/config.yaml
-      - ./app.py:/app/app.py
       - ./app_template.jinja2:/tmp/app_template.jinja2
       - ./frontend/public/docs:/tmp/csv
       - ./backend/sql:/tmp/sql
       - ./secret.key:/app/secret.key
       - ./postgres:/var/lib/postgresql/data
+    environment:
+      - PG_USER=${PG_USER}
+      - PG_PWD=${PG_PASSWORD}
+      - PG_DB=${PG_DB}
+      - PG_PORT=${PG_PORT}
+      - PG_HOST=localhost
+      - SECRET_KEY=${SECRET_KEY}
+      - CORS_ORIGIN=https://${DOMAIN}
     ports:
-      - 5432:5432
-      - 3030:5000
+      - 127.0.0.1:3030:5000
     networks:
       - internal
     healthcheck:

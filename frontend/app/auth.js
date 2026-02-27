@@ -31,7 +31,6 @@ export const { handlers, auth } = NextAuth({
   session: {
     strategy: "jwt", // Use JWT for session management
   },
-  secret: process.env.NEXTAUTH_SECRET, // Ensure this is set in .env
   callbacks: {
     // Attach user data to the JWT
     async jwt({ token, user }) {
