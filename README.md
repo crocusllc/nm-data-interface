@@ -21,7 +21,7 @@ architecture.
 
 ```bash
 git clone <repo-url>
-cd ptt
+cd nm-data-interface
 cp .env.example .env        # Edit .env — set DOMAIN, generate secrets
 ./deploy.sh                  # Builds and starts all containers
 # Access at https://localhost (or your DOMAIN)
@@ -37,7 +37,7 @@ See [docs/deployment.md](docs/deployment.md) for the full deployment guide.
 | [Updating & Backups](docs/updating.md) | Update script, backup, restore, post-update verification |
 | [Configuration Reference](docs/configuration.md) | `.env` variables, `config.yaml` structure, `read_config.py` modes |
 | [User Guide](docs/user-guide.md) | Login, CSV upload, search, edit, export |
-| [Admin Guide](docs/admin-guide.md) | User management (UI and curl), roles, bootstrap |
+| [Admin Guide](docs/admin-guide.md) | User management (API), roles, bootstrap |
 | [Architecture](docs/architecture.md) | Project structure, service topology, build pipeline |
 | [Changelog](CHANGELOG.md) | Release history and known issues |
 
