@@ -14,5 +14,8 @@ secret.key
 # PostgreSQL data
 postgres/
 
+# Caddy certificates and runtime data
+caddy/data/
+
 # Backups
 backups/
