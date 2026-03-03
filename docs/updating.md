@@ -26,6 +26,20 @@ If the update fails and the rollback triggers, you will see a message
 indicating the restore. Review the error output, fix the issue, and run the
 update script again.
 
+## Backing Up the Encryption Key
+
+The `secret.key` file in the project root encrypts all student PII at rest.
+**If this file is lost, encrypted data becomes permanently unreadable.**
+
+Copy it to a secure location alongside your database backups:
+
+```bash
+cp secret.key ./backups/secret.key
+```
+
+This file does not change between updates, so a single backup is sufficient
+unless you perform a fresh install.
+
 ## Manual Backup
 
 ```bash

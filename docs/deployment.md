@@ -35,7 +35,7 @@ has been tested in production.
 
 ```bash
 git clone <repo-url>
-cd ptt
+cd nm-data-interface
 ```
 
 ### 2. Configure environment
@@ -78,7 +78,11 @@ entirely by the `TLS_MODE` variable in `.env`:
 
 For air-gapped environments where Let's Encrypt is unavailable:
 
-1. Place your `.pfx` certificate in `caddy/data/`
+1. Create the `caddy/data/` directory and place your `.pfx` certificate in it:
+   ```bash
+   mkdir -p caddy/data
+   cp /path/to/cert.pfx caddy/data/
+   ```
 2. Update `caddy/Caddyfile` to reference it:
 
 ```
@@ -88,7 +92,19 @@ For air-gapped environments where Let's Encrypt is unavailable:
 }
 ```
 
-### 4. Deploy
+### 4. Encryption Key (`secret.key`)
+
+On first startup, the application auto-generates a `secret.key` file (Fernet
+encryption key) used to encrypt all student PII at rest. This file is:
+
+- Created by `entrypoint.sh` on first run
+- **Not recoverable** — if lost, all encrypted data becomes unreadable
+- Already excluded from git via `.gitignore`
+
+**Back up `secret.key` alongside your database backups.** See
+[updating.md](updating.md) for backup procedures.
+
+### 5. Deploy
 
 ```bash
 ./deploy.sh
@@ -101,7 +117,7 @@ This script:
 3. Waits for health checks to pass
 4. Prints the access URL
 
-### 5. Verify installation
+### 6. Verify installation
 
 1. Open `https://localhost` (or your `DOMAIN`) in a browser.
    Accept the self-signed certificate warning if using `TLS_MODE=internal`.
@@ -109,7 +125,7 @@ This script:
    - Username: `admin`
    - You will be prompted to set a new password on first login.
 
-### 6. Enable auto-start on boot (production)
+### 7. Enable auto-start on boot (production)
 
 ```bash
 sudo ./scripts/install-autostart.sh
