@@ -1,0 +1,51 @@
+{$DOMAIN} {
+    # Enable access logging
+    log {
+        output stdout
+        format console
+    }
+
+    # TLS_MODE=internal for self-signed (dev)
+    # TLS_MODE=you@example.com for Let's Encrypt (prod)
+    tls {$TLS_MODE}
+
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://{$DOMAIN}"
+        -Server
+    }
+
+    # CORS headers for all responses
+    @cors header Origin https://{$DOMAIN}
+    header @cors Access-Control-Allow-Origin "https://{$DOMAIN}"
+    header @cors Access-Control-Expose-Headers "Link"
+
+    # Handle CORS preflight
+    @cors_preflight {
+        method OPTIONS
+        header Origin https://{$DOMAIN}
+    }
+    handle @cors_preflight {
+        header Access-Control-Allow-Origin "https://{$DOMAIN}"
+        header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE"
+        header Access-Control-Allow-Headers "Content-Type, Authorization"
+        header Access-Control-Max-Age "3600"
+        respond "" 204
+    }
+
+    # API routes - redirect /db to /db/ and handle /db/*
+    redir /db /db/ permanent
+    handle_path /db/* {
+        reverse_proxy api:5000
+    }
+
+    # Frontend
+    handle {
+        reverse_proxy app:3000
+    }
+}

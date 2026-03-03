@@ -1,0 +1,11 @@
+Flask==2.2.3
+Werkzeug==2.2.3
+psycopg2-binary==2.9.10
+PyJWT
+SQLAlchemy
+passlib
+pyYAML
+cryptography
+flask-cors
+flask-limiter
+gunicorn
