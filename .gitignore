@@ -1,0 +1,21 @@
+# Docs generate on install
+clinical_placements.sql
+frontend/public/docs
+program_info.sql
+student_info.sql
+type_columns.sql
+
+# IDE files
+.idea/
+
+# Environment and secrets
+.env
+secret.key
+# PostgreSQL data
+postgres/
+
+# Caddy certificates and runtime data
+caddy/data/
+
+# Backups
+backups/
