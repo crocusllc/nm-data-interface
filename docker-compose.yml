@@ -1,0 +1,87 @@
+networks:
+  web:
+    name: web
+  internal:
+    driver: bridge
+
+services:
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN}
+      - TLS_MODE=${TLS_MODE}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/data:/data # Optional
+      - ./caddy/config:/config # Optional
+    networks:
+      - web
+      - internal
+  api:
+    build:
+      context: .
+      args:
+        PG_PORT: ${PG_PORT}
+        PG_HOST: localhost
+    restart: unless-stopped
+    command: /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./app_template.jinja2:/tmp/app_template.jinja2
+      - ./frontend/public/docs:/tmp/csv
+      - ./backend/sql:/tmp/sql
+      - ./secret.key:/app/secret.key
+      - ./postgres:/var/lib/postgresql/data
+    environment:
+      - PG_USER=${PG_USER}
+      - PG_PWD=${PG_PASSWORD}
+      - PG_DB=${PG_DB}
+      - PG_PORT=${PG_PORT}
+      - PG_HOST=localhost
+      - SECRET_KEY=${SECRET_KEY}
+      - CORS_ORIGIN=https://${DOMAIN}
+    ports:
+      - 127.0.0.1:3030:5000
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:5000/\")' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  app:
+    build:
+      context: ./
+      dockerfile: ./frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://${DOMAIN}/db
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+        restart: true
+    ports:
+      - 3000:3000
+    environment:
+      - AUTH_SECRET=${AUTH_SECRET}
+      - NEXTAUTH_URL=https://${DOMAIN}
+      - NEXT_PUBLIC_API_URL=https://${DOMAIN}/db
+      - API_URL=http://api:5000
+      - AUTH_TRUST_HOST=true
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./frontend/public/docs:/app/public/docs
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
