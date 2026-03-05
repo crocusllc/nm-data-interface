@@ -1,8 +1,7 @@
-# PTT Educator Preparation Data Interface
+# Teacher Preparation Data Tool
 
 A web application for managing student data in educator preparation programs.
-Built for Institutions of Higher Education (IHEs) participating in the
-Preparation Training Tracker (PTT) initiative, it provides CSV upload,
+Built for Institutions of Higher Education (IHEs), it provides CSV upload,
 role-based access, and record management through a centralized, configuration-driven
 architecture.
 
@@ -21,7 +20,7 @@ architecture.
 
 ```bash
 git clone <repo-url>
-cd nm-data-interface
+cd teacher-preparation-data-interface
 cp .env.example .env        # Edit .env — set DOMAIN, generate secrets
 ./deploy.sh                  # Builds and starts all containers
 # Access at https://localhost (or your DOMAIN)
