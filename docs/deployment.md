@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide covers deploying the PTT application on a Linux server with Docker.
+This guide covers deploying the Teacher Preparation Data Tool on a Linux server with Docker.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ has been tested in production.
 
 ```bash
 git clone <repo-url>
-cd nm-data-interface
+cd teacher-preparation-data-interface
 ```
 
 ### 2. Configure environment
